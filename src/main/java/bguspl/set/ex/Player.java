@@ -2,6 +2,8 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import java.util.Queue;
+
 /**
  * This class manages the players' threads and data
  *
@@ -51,6 +53,11 @@ public class Player implements Runnable {
     private int score;
 
     /**
+     * The player's queue of actions
+     */
+    private Queue<Integer> pressedKeys;
+
+    /**
      * The class constructor.
      *
      * @param env    - the game environment object.
@@ -87,7 +94,7 @@ public class Player implements Runnable {
      * key presses. If the queue of key presses is full, the thread waits until it is not full.
      */
     private void createArtificialIntelligence() {
-        // note: this is a very very smart AI (!)
+        // note: this is a very, very smart AI (!)
         aiThread = new Thread(() -> {
             System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
             while (!terminate) {
@@ -106,6 +113,9 @@ public class Player implements Runnable {
      */
     public void terminate() {
         // TODO implement
+        terminate = true;
+        // TODO change ai boolean terminate to true
+        // TODO terminate player threads
     }
 
     /**
@@ -139,5 +149,8 @@ public class Player implements Runnable {
 
     public int getScore() {
         return score;
+    }
+    public int getId() {
+        return id;
     }
 }

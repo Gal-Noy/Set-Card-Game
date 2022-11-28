@@ -2,6 +2,7 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,6 +52,8 @@ public class Dealer implements Runnable {
     @Override
     public void run() {
         System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
+        // TODO start players threads
+
         while (!shouldFinish()) {
             Collections.shuffle(deck);
             placeCardsOnTable();
@@ -79,6 +82,9 @@ public class Dealer implements Runnable {
      */
     public void terminate() {
         // TODO implement
+        // MAYBE:
+        for (Player player : players)
+            player.terminate();
     }
 
     /**
@@ -94,6 +100,10 @@ public class Dealer implements Runnable {
      */
     private void removeCardsFromTable() {
         // TODO implement
+        /**
+         * While placing cards, prevent players from placing/removing tokens
+         * For each non-empty slot on the table, table.removeCard()
+         */
     }
 
     /**
@@ -101,6 +111,10 @@ public class Dealer implements Runnable {
      */
     private void placeCardsOnTable() {
         // TODO implement
+        /**
+         * While placing cards, prevent players from placing/removing tokens
+         * For each empty slot on the table, table.placeCard()
+         */
     }
 
     /**
@@ -132,6 +146,10 @@ public class Dealer implements Runnable {
      */
     private void removeAllCardsFromTable() {
         // TODO implement
+        /**
+         * While placing cards, prevent players from placing/removing tokens
+         * For each non-empty slot on the table, table.removeCard()
+         */
     }
 
     /**
@@ -139,5 +157,9 @@ public class Dealer implements Runnable {
      */
     private void announceWinners() {
         // TODO implement
+        /**
+         * 1. find player/s with max points
+         * 2. write to the ui their name
+         */
     }
 }

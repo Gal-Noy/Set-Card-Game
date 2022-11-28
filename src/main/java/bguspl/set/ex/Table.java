@@ -30,6 +30,11 @@ public class Table {
     protected final Integer[] cardToSlot; // slot per card (if any)
 
     /**
+     * Lock for each slot on table
+     */
+    protected Object[] slotsLocks; // lock per slot
+
+    /**
      * Constructor for testing.
      *
      * @param env        - the game environment objects.
@@ -41,6 +46,7 @@ public class Table {
         this.env = env;
         this.slotToCard = slotToCard;
         this.cardToSlot = cardToSlot;
+        this.slotsLocks = new Object[cardToSlot.length];
     }
 
     /**
@@ -95,6 +101,8 @@ public class Table {
         slotToCard[slot] = card;
 
         // TODO implement
+        // TODO Tokens can't be placed
+        // TODO Countdown reset
     }
 
     /**
@@ -107,6 +115,8 @@ public class Table {
         } catch (InterruptedException ignored) {}
 
         // TODO implement
+        // TODO Tokens can't be placed
+        // TODO Countdown reset
     }
 
     /**

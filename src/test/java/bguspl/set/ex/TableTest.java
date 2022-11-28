@@ -6,12 +6,15 @@ import bguspl.set.UserInterface;
 import bguspl.set.Util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(MockitoExtension.class)
 class TableTest {
 
     Table table;
@@ -133,7 +136,9 @@ class TableTest {
         @Override
         public void announceWinner(int[] players) {
         }
-    };
+    }
+
+    ;
 
     static class MockUtil implements Util {
         @Override
