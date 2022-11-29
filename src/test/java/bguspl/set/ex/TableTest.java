@@ -58,7 +58,6 @@ class TableTest {
 
     private void placeSomeCardsAndAssert() {
         table.placeCard(8, 2);
-
         assertEquals(8, (int) slotToCard[2]);
         assertEquals(2, (int) cardToSlot[8]);
     }

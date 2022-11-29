@@ -2,7 +2,9 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.SynchronousQueue;
 
 /**
  * This class manages the players' threads and data
@@ -21,6 +23,11 @@ public class Player implements Runnable {
      * Game entities.
      */
     private final Table table;
+
+    /**
+     * Game dealer.
+     */
+    private final Dealer dealer;
 
     /**
      * The id of the player (starting from 0).
@@ -56,6 +63,10 @@ public class Player implements Runnable {
      * The player's queue of actions
      */
     private Queue<Integer> pressedKeys;
+    /**
+     * The player's queue capacity
+     */
+    private final int queueCapacity = 3;
 
     /**
      * The class constructor.
@@ -68,9 +79,11 @@ public class Player implements Runnable {
      */
     public Player(Env env, Dealer dealer, Table table, int id, boolean human) {
         this.env = env;
+        this.dealer = dealer;
         this.table = table;
         this.id = id;
         this.human = human;
+        this.pressedKeys = new ArrayDeque<>();
     }
 
     /**
@@ -110,6 +123,8 @@ public class Player implements Runnable {
 
     /**
      * Called when the game should be terminated due to an external event.
+     * @pre - None.
+     * @post - terminate == true
      */
     public void terminate() {
         // TODO implement
@@ -122,15 +137,20 @@ public class Player implements Runnable {
      * This method is called when a key is pressed.
      *
      * @param slot - the slot corresponding to the key pressed.
+     * @pre - None.
+     * @post - pressedKeys.peek() == slot.
      */
     public void keyPressed(int slot) {
         // TODO implement
+        if (pressedKeys.size() < queueCapacity)
+            pressedKeys.add(slot);
     }
 
     /**
      * Award a point to a player and perform other related actions.
      *
-     * @post - the player's score is increased by 1.
+     * @pre - None.
+     * @post - getScore() == @pre(getScore()) +  1
      * @post - the player's score is updated in the ui.
      */
     public void point() {
@@ -142,15 +162,38 @@ public class Player implements Runnable {
 
     /**
      * Penalize a player and perform other related actions.
+     * @pre - None.
+     * @post - this.keyPressed(slot);
+        * pressedKeys.size() == @pre(pressedKeys.size())
      */
     public void penalty() {
         // TODO implement
     }
 
+    /**
+     * @pre - None.
+     * @post - None.
+     * @return current score.
+     */
     public int getScore() {
         return score;
     }
+
+    /**
+     * @pre - None.
+     * @post - None.
+     * @return id.
+     */
     public int getId() {
         return id;
+    }
+
+    /**
+     * @pre - None.
+     * @post - None.
+     * @return player's queue.
+     */
+    public Queue<Integer> getQueue() {
+        return pressedKeys;
     }
 }

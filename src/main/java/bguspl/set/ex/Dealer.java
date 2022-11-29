@@ -39,11 +39,17 @@ public class Dealer implements Runnable {
      */
     private long countdownUntil;
 
+//    /**
+//     * Array of players locks objects
+//     */
+//    private final Object[] playerLocks;
+
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
         this.table = table;
         this.players = players;
         deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
+//        this.playerLocks = new Object[players.length];
     }
 
     /**
@@ -53,7 +59,11 @@ public class Dealer implements Runnable {
     public void run() {
         System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
         // TODO start players threads
-
+        // players can't put tokens until all cards on the table
+        for (Player player : players){
+            Thread playerThread = new Thread(player, "player " + player.getId());
+            playerThread.start();
+        }
         while (!shouldFinish()) {
             Collections.shuffle(deck);
             placeCardsOnTable();
@@ -85,6 +95,7 @@ public class Dealer implements Runnable {
         // MAYBE:
         for (Player player : players)
             player.terminate();
+        terminate = false;
     }
 
     /**
