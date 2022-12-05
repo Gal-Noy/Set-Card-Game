@@ -93,7 +93,10 @@ public class Dealer implements Runnable {
      * Called when the game should be terminated due to an external event.
      */
     public void terminate() {
-        // TODO implement
+        for (Player player : players){
+            player.terminate();
+        }
+        terminate = true;
     }
 
     /**

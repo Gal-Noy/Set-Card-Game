@@ -116,7 +116,7 @@ public class Player implements Runnable {
                 // TODO implement player key press simulator
                 try {
                     synchronized (this) {
-                        wait();
+                        wait(1000);
                     }
                 } catch (InterruptedException ignored) {
                 }
@@ -130,7 +130,12 @@ public class Player implements Runnable {
      * Called when the game should be terminated due to an external event.
      */
     public void terminate() {
-        // TODO implement
+        terminate = true;
+        try {
+            if (!human) aiThread.join();
+        } catch (InterruptedException ignored) {
+            System.out.println(ignored);
+        }
     }
 
     /**
