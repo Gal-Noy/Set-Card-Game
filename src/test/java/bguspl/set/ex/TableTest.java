@@ -6,15 +6,12 @@ import bguspl.set.UserInterface;
 import bguspl.set.Util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@ExtendWith(MockitoExtension.class)
 class TableTest {
 
     Table table;
@@ -58,6 +55,7 @@ class TableTest {
 
     private void placeSomeCardsAndAssert() {
         table.placeCard(8, 2);
+
         assertEquals(8, (int) slotToCard[2]);
         assertEquals(2, (int) cardToSlot[8]);
     }
@@ -97,47 +95,28 @@ class TableTest {
 
     static class MockUserInterface implements UserInterface {
         @Override
-        public void placeCard(int card, int slot) {
-        }
-
+        public void placeCard(int card, int slot) {}
         @Override
-        public void removeCard(int slot) {
-        }
-
+        public void removeCard(int slot) {}
         @Override
-        public void setCountdown(int seconds, boolean warn) {
-        }
-
+        public void setCountdown(long millies, boolean warn) {}
         @Override
-        public void setScore(int player, int score) {
-        }
-
+        public void setElapsed(long millies) {}
         @Override
-        public void setFreeze(int player, int seconds) {
-        }
-
+        public void setScore(int player, int score) {}
         @Override
-        public void placeToken(int player, int slot) {
-        }
-
+        public void setFreeze(int player, long millies) {}
         @Override
-        public void removeTokens() {
-        }
-
+        public void placeToken(int player, int slot) {}
         @Override
-        public void removeTokens(int slot) {
-        }
-
+        public void removeTokens() {}
         @Override
-        public void removeToken(int player, int slot) {
-        }
-
+        public void removeTokens(int slot) {}
         @Override
-        public void announceWinner(int[] players) {
-        }
-    }
-
-    ;
+        public void removeToken(int player, int slot) {}
+        @Override
+        public void announceWinner(int[] players) {}
+    };
 
     static class MockUtil implements Util {
         @Override

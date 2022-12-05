@@ -66,13 +66,4 @@ class PlayerTest {
         // check that ui.setScore was called with the player's id and the correct score
         verify(ui).setScore(eq(player.id), eq(expectedScore));
     }
-
-    @Test
-    void queue(){
-        this.player.keyPressed(0);
-        this.player.keyPressed(1);
-        this.player.keyPressed(2);
-        this.player.keyPressed(3);
-        assertEquals(3, this.player.getQueue().size());
-    }
 }

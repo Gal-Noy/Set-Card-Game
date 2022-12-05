@@ -5,6 +5,8 @@ import java.awt.*;
 import java.io.FileNotFoundException;
 import java.net.URL;
 
+import static java.lang.String.format;
+
 /**
  * Java Swing implementation of the UserInterface interface.
  */
@@ -16,7 +18,7 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
     private final WinnerPanel winnerPanel;
 
     static String intInBaseToPaddedString(int n, int padding, int base) {
-        return String.format("%" + padding + "s", Integer.toString(n, base)).replace(' ', '0');
+        return format("%" + padding + "s", Integer.toString(n, base)).replace(' ', '0');
     }
 
     public UserInterfaceImpl(Config config) {
@@ -58,13 +60,15 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
 
         private final JLabel timerField;
 
-        private String generateTime(int newTime) {
-            return "Remaining Time: " + (newTime / 1000);
+        private String generateTime(long millies, boolean warn) {
+            if (warn)
+                return format("Remaining Time: %.2f", (double) millies / 1000.0f);
+            else
+                return format("Remaining Time: %d", millies / 1000L);
         }
 
         private TimerPanel(Config config) {
-            int time = (int) config.turnTimeoutMillis;
-            timerField = new JLabel(generateTime(time));
+            timerField = new JLabel(config.turnTimeoutMillis < 0 ? "PLAY" : "GET READY...");
 
             // set fonts and color
             timerField.setFont(new Font("Serif", Font.BOLD, config.fontSize));
@@ -73,15 +77,14 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
             add(timerField);
         }
 
-        private void setCountdown(int seconds, boolean warn) {
-            timerField.setText(generateTime(seconds));
-            if (warn) {
-                timerField.setForeground(Color.RED);
-            } else {
-                timerField.setForeground(Color.BLACK);
-            }
+        private void setCountdown(long millies, boolean warn) {
+            timerField.setText(generateTime(millies, warn));
+            timerField.setBackground(warn ? Color.RED : Color.BLACK);
         }
 
+        private void setElapsed(long millies) {
+            timerField.setText("Elapsed time: " + millies / 1000);
+        }
     }
 
     private static class GamePanel extends JLayeredPane {
@@ -228,9 +231,9 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
             playersTable[1][player].setText(Integer.toString(score));
         }
 
-        private void setFreeze(int player, int seconds) {
-            if (seconds > 0) {
-                this.playersTable[0][player].setText(config.playerNames[player] + " (" + seconds + ")");
+        private void setFreeze(int player, long millies) {
+            if (millies > 0) {
+                this.playersTable[0][player].setText(config.playerNames[player] + " (" + millies / 1000 + ")");
                 this.playersTable[0][player].setForeground(Color.RED);
             } else {
                 this.playersTable[0][player].setText(config.playerNames[player]);
@@ -258,10 +261,10 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         private void announceWinner(int[] players) {
             if(players.length == 1)
                 winnerAnnouncement.setText("THE WINNER IS: " + config.playerNames[players[0]] + "!!!");
-            else{
+            else {
                 String text = "";
-                for (int i = 0; i < players.length; i++)
-                    text = text.concat(config.playerNames[players[i]] + " AND ");
+                for (int player : players)
+                    text = text.concat(config.playerNames[player] + " AND ");
                 text = text.substring(0, text.length() - 5);
                 winnerAnnouncement.setText("IT IS A DRAW: " + text + " WON!!!");
             }
@@ -278,9 +281,12 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         gamePanel.removeCard(slot);
     }
 
-    @Override
-    public void setCountdown(int seconds, boolean warn) {
-        timerPanel.setCountdown(seconds, warn);
+    public void setCountdown(long millies, boolean warn) {
+        timerPanel.setCountdown(millies, warn);
+    }
+
+    public void setElapsed(long millies) {
+        timerPanel.setElapsed(millies);
     }
 
     @Override
@@ -289,8 +295,8 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
     }
 
     @Override
-    public void setFreeze(int player, int seconds) {
-        playersPanel.setFreeze(player, seconds);
+    public void setFreeze(int player, long millies) {
+        playersPanel.setFreeze(player, millies);
     }
 
     @Override

@@ -5,6 +5,7 @@ import bguspl.set.Env;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
 /**
@@ -28,11 +29,10 @@ public class Table {
      * Mapping between a card and the slot it is in (null if none).
      */
     protected final Integer[] cardToSlot; // slot per card (if any)
-
     /**
-     * Lock for each slot on table
+     * For every slot, hold a lock
      */
-    protected Object[] slotsLocks; // lock per slot
+    protected final Semaphore[] slotLocks;
 
     /**
      * Constructor for testing.
@@ -46,7 +46,10 @@ public class Table {
         this.env = env;
         this.slotToCard = slotToCard;
         this.cardToSlot = cardToSlot;
-        this.slotsLocks = new Object[cardToSlot.length];
+        this.slotLocks = new Semaphore[slotToCard.length];
+        for (int i = 0; i < slotLocks.length; i++){
+            slotLocks[i] = new Semaphore(1, true);
+        }
     }
 
     /**
@@ -100,9 +103,8 @@ public class Table {
         cardToSlot[card] = slot;
         slotToCard[slot] = card;
 
-        // TODO implement
-        // TODO Tokens can't be placed
-        // TODO Countdown reset
+        // Display changes on ui
+        env.ui.placeCard(card, slot);
     }
 
     /**
@@ -114,9 +116,12 @@ public class Table {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {}
 
-        // TODO implement
-        // TODO Tokens can't be placed
-        // TODO Countdown reset
+        int cardIdx = slotToCard[slot];
+        slotToCard[slot] = null;
+        cardToSlot[cardIdx] = null;
+
+        // Display changes on ui
+        env.ui.removeCard(slot);
     }
 
     /**
@@ -126,6 +131,7 @@ public class Table {
      */
     public void placeToken(int player, int slot) {
         // TODO implement
+//        env.ui.placeToken(player, slot);
     }
 
     /**
@@ -137,5 +143,9 @@ public class Table {
     public boolean removeToken(int player, int slot) {
         // TODO implement
         return false;
+    }
+
+    public Semaphore getSlotLock(int slot){
+        return slotLocks[slot];
     }
 }

@@ -18,11 +18,17 @@ public interface UserInterface {
     void removeCard(int slot);
 
     /**
-     * Set the timer digits to the specified time.
-     * @param seconds - number of seconds to be shown.
-     * @param warn - if true, seconds will be painted in red.
+     * Set the countdown time to the specified number of milliseconds.
+     * @param millies - the milliseconds to be shown.
+     * @param warn    - if true, the timer will be painted in red and will display milliseconds
      */
-    void setCountdown(int seconds, boolean warn);
+    void setCountdown(long millies, boolean warn);
+
+    /**
+     * Set the elapsed time to the specified number of milliseconds.
+     * @param millies - the milliseconds to be shown.
+     */
+    void setElapsed(long millies);
 
     /**
      * Set the score for the relevent player in the player score panel.
@@ -33,12 +39,12 @@ public interface UserInterface {
 
     /**
      * Set the player text in the score panel to show remaining freeze time.
-     * If seconds > 0, show player name in red, and add freeze time.
-     * If seconds <= 0, set player name to default black name without freeze.
-     * @param player - the player id.
-     * @param seconds - the freeze time in seconds.
+     * If milliseconds > 0, show player name in red, and add freeze time.
+     * If milliseconds <= 0, set player name to default black name without freeze.
+     * @param player  - the player id.
+     * @param millies - the freeze time in milliseconds.
      */
-    void setFreeze(int player, int seconds);
+    void setFreeze(int player, long millies);
 
     /**
      * Draw a player name text in the specified slot.

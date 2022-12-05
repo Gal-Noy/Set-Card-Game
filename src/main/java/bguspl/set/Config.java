@@ -14,49 +14,19 @@ import java.util.Properties;
 public class Config {
 
     /**
-     * The number of features of each card.
+     * The number of features on the cards (e.g. shape, color etc.)
      */
     public final int featureCount;
 
     /**
-     * The number of possible values for each feature.
+     * The number of choices for each feature (e.g. red, green, blue)
      */
     public final int featureSize;
 
     /**
-     * The total number of cards in the deck.
+     * The total number of cards in the deck (i.e. featureSize ^ featureCount)
      */
     public final int deckSize;
-
-    /**
-     * The number of columns in the table grid.
-     */
-    public final int columns;
-
-    /**
-     * The number of rows in the table grid.
-     */
-    public final int rows;
-
-    /**
-     * The total number of cells in the table grid.
-     */
-    public final int tableSize;
-
-    /**
-     * The width (in pixels) of each cell in the table grid.
-     */
-    public final int cellWidth;
-
-    /**
-     * The height (in pixels) of each cell in the table grid.
-     */
-    public final int cellHeight;
-
-    /**
-     * The size of the font.
-     */
-    public final int fontSize;
 
     /**
      * The number of human players in the game.
@@ -64,50 +34,96 @@ public class Config {
     public final int humanPlayers;
 
     /**
-     * The number of AI (computer) players in the game.
+     * The number of computer players (i.e. input is simulated)
      */
     public final int computerPlayers;
 
     /**
-     * The total number of players (human + computer) in the game.
+     * The total number of players (human + computer) in the game
      */
     public final int players;
 
     /**
-     * An array containing the names of the players.
-     */
-    public final String[] playerNames;
-
-    /**
-     * If true, print the features and slot ids of all legal sets of the cards that are placed on the table.
+     * Whether to print out hints to the console or not
      */
     public final boolean hints;
 
     /**
-     * The time in milliseconds to wait for a legal set to be found before the dealer reshuffles the deck.
+     * The number of milliseconds until the dealer reshuffles the deck (0 show timer since last action, -1 show nothing)
      */
     public final long turnTimeoutMillis;
 
     /**
-     * The time in milliseconds a player gets frozen for as penalty for marking an illegal set.
+     * The number of milliseconds the turn countdown warning should be displayed
+     */
+    public final long turnTimeoutWarningMillis;
+
+    /**
+     * The number of milliseconds a player gets frozen for when he scores a point
      */
     public final long penaltyFreezeMillis;
 
     /**
-     * The time in milliseconds a player ges frozen for when marking a legal set.
+     * The number of milliseconds a player gets frozen for when penalized
      */
     public final long pointFreezeMillis;
 
     /**
-     * The time in milliseconds the dealer pauses before placing / removing a card from the table.
+     * The number of milliseconds to delay before removing/placing a card on the table
      */
     public final long tableDelayMillis;
 
+    /**
+     * The names of the players to display on the screen
+     * Note: if there are more players than names, the remaining players will be called "Player 3", "Player 4", etc.
+     */
+    public final String[] playerNames;
+
+    /**
+     * The number of rows in the grid of cards on the table (and on the screen)
+     */
+    public final int rows;
+
+    /**
+     * The number of columns in the grid of cards on the table (and on the screen)
+     */
+    public final int columns;
+
+    /**
+     * The total number of cells in the table grid
+     */
+    public final int tableSize;
+
+    /**
+     * The width (in pixels) of each cell
+     */
+    public final int cellWidth;
+
+    /**
+     * The height (in pixels) of each cell
+     */
+    public final int cellHeight;
+
+    /**
+     * The size of the displayed font
+     */
+    public final int fontSize;
+
+    /**
+     * The scancodes of the keyboard input data for each player
+     * Notes:
+     * 1. This should correspond to the number of human players and the dimensions of the table card grid (i.e. the
+     * first n codes are for the first row, the 2nd n codes are for the 2nd row etc., n being the number of columns).
+     * 2. If the number of entries here does not match the number of human players a warning will be issued
+     */
     private final int[][] playerKeys;
+
+    /**
+     * The default scan codes data (this is the same as in the default config.properties file)
+     */
     private static final String[] playerKeysDefaults = {
             "81,87,69,82,65,83,68,70,90,88,67,86",
             "85,73,79,80,74,75,76,59,77,44,46,47"};
-
 
     /**
      * Attempts to read the config properties from the current working directory. Otherwise, tries to load them
@@ -124,9 +140,10 @@ public class Config {
         try (InputStream is = Files.newInputStream(Paths.get(filename))) {
             properties.load(is);
         } catch (IOException e) {
-            System.out.printf("Warning: cannot read config file %s trying as a resource.%n", filename);
+            System.out.printf("Info: cannot read configuration file %s trying from resources.%n", filename);
             try (InputStream is = Config.class.getClassLoader().getResourceAsStream(filename)) {
                 properties.load(is);
+                System.out.printf("Info: configuration file was loaded from resources directory.%n", filename);
             } catch (IOException | InvalidPathException ex) {
                 System.out.println("Warning: cannot read config file from the resources directory either. Using defaults.");
             }
@@ -152,8 +169,9 @@ public class Config {
         computerPlayers = Integer.parseInt(properties.getProperty("ComputerPlayers", "0"));
         players = humanPlayers + computerPlayers;
 
-        hints = Boolean.parseBoolean(properties.getProperty("Hints", "false"));
+        hints = Boolean.parseBoolean(properties.getProperty("Hints", "False"));
         turnTimeoutMillis = (long) (Double.parseDouble(properties.getProperty("TurnTimeoutSeconds", "60")) * 1000.0);
+        turnTimeoutWarningMillis = (long) (Double.parseDouble(properties.getProperty("TurnTimeoutWarningSeconds", "60")) * 1000.0);
         pointFreezeMillis = (long) (Double.parseDouble(properties.getProperty("PointFreezeSeconds", "1")) * 1000.0);
         penaltyFreezeMillis = (long) (Double.parseDouble(properties.getProperty("PenaltyFreezeSeconds", "3")) * 1000.0);
         tableDelayMillis = (long) (Double.parseDouble(properties.getProperty("TableDelaySeconds", "0.1")) * 1000.0);
@@ -161,7 +179,7 @@ public class Config {
         // ui data
         String[] names = properties.getProperty("PlayerNames", "Player 1, Player 2").split(",");
         playerNames = new String[players];
-        Arrays.setAll(playerNames, i -> i < names.length ? names[i] : "Player " + (i + 1));
+        Arrays.setAll(playerNames, i -> i < names.length ? names[i].trim() : "Player " + (i + 1));
 
         rows = Integer.parseInt(properties.getProperty("Rows", "3"));
         columns = Integer.parseInt(properties.getProperty("Columns", "4"));
