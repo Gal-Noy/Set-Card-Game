@@ -2,10 +2,9 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 /**
  * This class manages the players' threads and data
@@ -113,13 +112,12 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
             while (!terminate) {
-                // TODO implement player key press simulator
-                try {
-                    synchronized (this) {
-                        wait(1000);
-                    }
-                } catch (InterruptedException ignored) {
-                }
+                List<Integer> deck = Arrays.stream(table.slotToCard).filter(Objects::nonNull).collect(Collectors.toList());
+                env.util.findSets(deck, Integer.MAX_VALUE).forEach(set -> {
+                    List<Integer> slots = Arrays.stream(set).mapToObj(card -> table.cardToSlot[card]).sorted().collect(Collectors.toList());
+                    for (int slot : slots)
+                        keyPressed(slot);
+                });
             }
             System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
         }, "computer-" + id);
