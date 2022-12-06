@@ -112,12 +112,12 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
             while (!terminate) {
-                List<Integer> deck = Arrays.stream(table.slotToCard).filter(Objects::nonNull).collect(Collectors.toList());
-                env.util.findSets(deck, Integer.MAX_VALUE).forEach(set -> {
-                    List<Integer> slots = Arrays.stream(set).mapToObj(card -> table.cardToSlot[card]).sorted().collect(Collectors.toList());
-                    for (int slot : slots)
-                        keyPressed(slot);
-                });
+//                List<Integer> deck = Arrays.stream(table.slotToCard).filter(Objects::nonNull).collect(Collectors.toList());
+//                env.util.findSets(deck, Integer.MAX_VALUE).forEach(set -> {
+//                    List<Integer> slots = Arrays.stream(set).mapToObj(card -> table.cardToSlot[card]).sorted().collect(Collectors.toList());
+//                    for (int slot : slots)
+//                        keyPressed(slot);
+//                });
             }
             System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
         }, "computer-" + id);

@@ -93,7 +93,7 @@ public class Dealer implements Runnable {
      * Called when the game should be terminated due to an external event.
      */
     public void terminate() {
-        for (Player player : players){
+        for (Player player : players) {
             player.terminate();
         }
         terminate = true;
@@ -119,7 +119,31 @@ public class Dealer implements Runnable {
      * Check if any cards can be removed from the deck and placed on the table.
      */
     private void placeCardsOnTable() {
-        // TODO implement
+        List<Integer> availableSlots = getAvailableSlots();
+        List<Integer> availableCards = getAvailableCards();
+        for (int slot : availableSlots) {
+            int card = (int) (Math.random() * availableCards.size());
+            table.slotToCard[slot] = card;
+            table.placeCard(card, slot);
+            availableCards.remove(card);
+        }
+    }
+    private List<Integer> getAvailableSlots(){
+        List<Integer> output = new ArrayList<>();
+        for (int i = 0; i < table.slotToCard.length; i++){
+            if (table.slotToCard[i] == null)
+                output.add(i);
+        }
+        return output;
+    }
+
+    private List<Integer> getAvailableCards(){
+        List<Integer> output = new ArrayList<>();
+        for (int i = 0; i < table.cardToSlot.length; i++){
+            if (table.cardToSlot[i] == null)
+                output.add(i);
+        }
+        return output;
     }
 
     /**
@@ -153,14 +177,15 @@ public class Dealer implements Runnable {
         // TODO implement
     }
 
-    public Set<Integer> getPlayerSet(int playerId){
+    public Set<Integer> getPlayerSet(int playerId) {
         return playersTokens.get(playerId);
     }
 
-    public void addPossible(int playerId){
+    public void addPossible(int playerId) {
         possibleSets.add(playerId);
     }
-    private void examineSets(){
+
+    private void examineSets() {
         while (!possibleSets.isEmpty()) {
             int nextPlayer = possibleSets.remove();
             Set<Integer> possibleSet = playersTokens.get(nextPlayer);
