@@ -175,7 +175,21 @@ public class Dealer implements Runnable {
      * Returns all the cards from the table to the deck.
      */
     private void removeAllCardsFromTable() {
-        // TODO implement
+        List<Integer> occupiedSlots = getOccupiedSlots();
+        for (int slot : occupiedSlots) {
+            table.cardToSlot[table.slotToCard[slot]] = null;
+            table.removeCard(slot);
+        }
+        updateTimerDisplay(true);
+    }
+
+    private List<Integer> getOccupiedSlots(){
+        List<Integer> output = new ArrayList<>();
+        for (int i = 0; i < table.slotToCard.length; i++) {
+            if (table.slotToCard[i] != null)
+                output.add(i);
+        }
+        return output;
     }
 
     /**
