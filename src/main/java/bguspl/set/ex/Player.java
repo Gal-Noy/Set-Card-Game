@@ -62,6 +62,8 @@ public class Player implements Runnable {
      */
     private Queue<Integer> chosenSlots;
 
+    private long freezeTime = -1;
+
     /**
      * The class constructor.
      *
@@ -90,7 +92,6 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
-            // TODO implement main player loop
             if (chosenSlots.isEmpty()) continue;
             // if can:
             int nextSlot = chosenSlots.remove();
@@ -142,9 +143,18 @@ public class Player implements Runnable {
      * @param slot - the slot corresponding to the key pressed.
      */
     public void keyPressed(int slot) {
-        // TODO implement
-        if (chosenSlots.size() < env.config.featureSize)
-            chosenSlots.add(slot);
+        if (freezeTime >= System.currentTimeMillis())
+            return;
+        Semaphore slotLock = table.getSlotLock(slot);
+        try {
+            slotLock.acquire();
+            if (chosenSlots.size() < env.config.featureSize &&
+                    dealer.getPlayerSet(getId()).size() < env.config.featureSize)
+                chosenSlots.add(slot);
+            slotLock.release();
+        } catch (InterruptedException e) {
+            System.out.println("ERROR IN PLAYAAAAA!!!!!!!!!!!!!!!!!!!!!!");
+        }
     }
 
     /**
@@ -187,6 +197,7 @@ public class Player implements Runnable {
         Semaphore slotLock = table.getSlotLock(slot);
         try {
             slotLock.acquire();
+
             Set<Integer> playerSet = dealer.getPlayerSet(id);
             if (playerSet.contains(slot)) {
                 playerSet.remove(slot);
@@ -195,10 +206,22 @@ public class Player implements Runnable {
                 playerSet.add(slot);
                 table.placeToken(id, slot);
             }
-            if (playerSet.size() == env.config.featureSize)
-                notifyAll(); // Wakes the dealer
-        } catch (InterruptedException e) {
+            if (playerSet.size() == env.config.featureSize) {
+                dealer.addPossible(id);
+                dealer.getThread().interrupt(); // Wakes the dealer
+            }
+
             slotLock.release();
+        } catch (InterruptedException e) {
+            System.out.println("ANOTHER ERROR IN TOGGLETOKENNNNNNNN");
         }
+    }
+
+    public void setFreezeTime(long time){
+        freezeTime = time;
+    }
+
+    public long getFreezeTime(){
+        return freezeTime;
     }
 }

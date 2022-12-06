@@ -130,8 +130,7 @@ public class Table {
      * @param slot   - the slot on which to place the token.
      */
     public void placeToken(int player, int slot) {
-        // TODO implement
-//        env.ui.placeToken(player, slot);
+        env.ui.placeToken(player, slot);
     }
 
     /**
@@ -141,8 +140,8 @@ public class Table {
      * @return       - true iff a token was successfully removed.
      */
     public boolean removeToken(int player, int slot) {
-        // TODO implement
-        return false;
+        env.ui.removeToken(player, slot);
+        return true;
     }
 
     public Semaphore getSlotLock(int slot){

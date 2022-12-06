@@ -22,6 +22,8 @@ public class Dealer implements Runnable {
     private final Table table;
     private final Player[] players;
 
+    private Thread dealerThread;
+
     /**
      * The list of card ids that are left in the dealer's deck.
      */
@@ -50,7 +52,10 @@ public class Dealer implements Runnable {
         this.table = table;
         this.players = players;
         deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
+
         this.playersTokens = new HashMap<>();
+        for (int i = 0; i < this.players.length; i++)
+            playersTokens.put(i, new HashSet<>());
         this.possibleSets = new ArrayDeque<>();
     }
 
@@ -61,6 +66,7 @@ public class Dealer implements Runnable {
     public void run() {
         System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
 
+        dealerThread = Thread.currentThread();
         for (Player player : players) {
             player.setThread(new Thread(player, "player " + player.getId()));
             player.getThread().start();
@@ -156,6 +162,7 @@ public class Dealer implements Runnable {
         try {
             Thread.sleep(1000);
         } catch (Exception e) {
+            System.out.println("HADPASA!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
     }
 
@@ -169,17 +176,34 @@ public class Dealer implements Runnable {
             long delta = reshuffleTime - System.currentTimeMillis();
             env.ui.setCountdown(delta, env.config.turnTimeoutWarningMillis < delta);
         }
+        for (Player player : players)
+            env.ui.setFreeze(player.getId(), player.getFreezeTime() - System.currentTimeMillis());
+
     }
 
     /**
      * Returns all the cards from the table to the deck.
      */
     private void removeAllCardsFromTable() {
-        List<Integer> occupiedSlots = getOccupiedSlots();
-        for (int slot : occupiedSlots) {
-            table.cardToSlot[table.slotToCard[slot]] = null;
-            table.removeCard(slot);
+        try {
+            for (int i = 0; i < env.config.tableSize; i++)
+                table.getSlotLock(i).acquire();
+
+            List<Integer> occupiedSlots = getOccupiedSlots();
+            for (int slot : occupiedSlots) {
+                table.cardToSlot[table.slotToCard[slot]] = null;
+                table.removeCard(slot);
+            }
+
+            removeTokens();
+
+            for (int i = 0; i < env.config.tableSize; i++)
+                table.getSlotLock(i).release();
         }
+        catch (InterruptedException e) {
+            System.out.println("THERE IS AN ERROR IN REMOVEALLCARDS NODERRR!!!!!!!!!!!!!!!!!!!!!!");
+        }
+
         updateTimerDisplay(true);
     }
 
@@ -190,6 +214,16 @@ public class Dealer implements Runnable {
                 output.add(i);
         }
         return output;
+    }
+
+    private void removeTokens() {
+        // Iterate each player's tokens set, remove tokens from set and from table
+        for (Player player : players) {
+            Set<Integer> playerSet = playersTokens.get(player.getId());
+            for (int slot : playerSet)
+                table.removeToken(player.getId(), slot);
+            playerSet.clear();
+        }
     }
 
     /**
@@ -230,22 +264,19 @@ public class Dealer implements Runnable {
                 if (isLegalSet)
                     removeTokensFromSets(cards);
 
-            } catch (InterruptedException e) {
                 for (Integer slot : possibleSet)
                     table.getSlotLock(slot).release();
+
+            } catch (InterruptedException e) {
+                System.out.println("ERROR IN DEALER!!!!!!!!!!!!!!!!!!!!!!");
             }
         }
     }
 
     private void freezePlayer(int playerId, boolean isLegalSet) {
-        Thread playerThread = players[playerId].getThread();
+        Player player = players[playerId];
         long freezeTime = isLegalSet ? env.config.pointFreezeMillis : env.config.penaltyFreezeMillis;
-        try {
-            playerThread.wait(freezeTime);
-            env.ui.setFreeze(playerId, freezeTime);
-        } catch (InterruptedException e) {
-            System.out.println("THERE IS AN ERROR HERE!!!!!!!!!!!!!!!!!!!!!!");
-        }
+        player.setFreezeTime(Long.sum(System.currentTimeMillis(), freezeTime));
     }
 
     private void removeTokensFromSets(int[] cards) {
@@ -253,5 +284,9 @@ public class Dealer implements Runnable {
             for (int slot : cards)
                 set.remove(slot);
         }
+    }
+
+    public Thread getThread(){
+        return dealerThread;
     }
 }
