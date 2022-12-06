@@ -170,15 +170,17 @@ public class Dealer implements Runnable {
      * Reset and/or update the countdown and the countdown display.
      */
     private void updateTimerDisplay(boolean reset) {
-        if (reset)
+        if (reset){
             reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis;
+            for (Player player : players)
+                player.setFreezeTime(-1);
+        }
         else {
             long delta = reshuffleTime - System.currentTimeMillis();
             env.ui.setCountdown(delta, env.config.turnTimeoutWarningMillis < delta);
         }
         for (Player player : players)
             env.ui.setFreeze(player.getId(), player.getFreezeTime() - System.currentTimeMillis());
-
     }
 
     /**

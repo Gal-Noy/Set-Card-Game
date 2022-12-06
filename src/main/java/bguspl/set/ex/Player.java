@@ -93,6 +93,7 @@ public class Player implements Runnable {
 
         while (!terminate) {
             if (chosenSlots.isEmpty()) continue;
+
             // if can:
             int nextSlot = chosenSlots.remove();
             toggleToken(nextSlot);
@@ -143,13 +144,12 @@ public class Player implements Runnable {
      * @param slot - the slot corresponding to the key pressed.
      */
     public void keyPressed(int slot) {
-        if (freezeTime >= System.currentTimeMillis())
-            return;
+        if (freezeTime >= System.currentTimeMillis()) return;
+
         Semaphore slotLock = table.getSlotLock(slot);
         try {
             slotLock.acquire();
-            if (chosenSlots.size() < env.config.featureSize &&
-                    dealer.getPlayerSet(getId()).size() < env.config.featureSize)
+            if (chosenSlots.size() < env.config.featureSize)
                 chosenSlots.add(slot);
             slotLock.release();
         } catch (InterruptedException e) {
@@ -195,33 +195,50 @@ public class Player implements Runnable {
 
     public void toggleToken(int slot) {
         Semaphore slotLock = table.getSlotLock(slot);
+
         try {
             slotLock.acquire();
 
             Set<Integer> playerSet = dealer.getPlayerSet(id);
-            if (playerSet.contains(slot)) {
-                playerSet.remove(slot);
-                table.removeToken(id, slot);
-            } else {
-                playerSet.add(slot);
-                table.placeToken(id, slot);
-            }
-            if (playerSet.size() == env.config.featureSize) {
-                dealer.addPossible(id);
-                dealer.getThread().interrupt(); // Wakes the dealer
-            }
+            boolean containsSlot = playerSet.contains(slot);
+
+            if (playerSet.size() < env.config.featureSize) {
+                if (containsSlot)
+                    removeToken(playerSet, slot);
+                else{
+                    addToken(playerSet, slot);
+
+                    // Updated to three
+                    if (playerSet.size() == env.config.featureSize) {
+                        dealer.addPossible(id);
+                        dealer.getThread().interrupt(); // Wakes the dealer
+                    }
+                }
+            } else if (containsSlot)
+                removeToken(playerSet, slot);
 
             slotLock.release();
+
         } catch (InterruptedException e) {
             System.out.println("ANOTHER ERROR IN TOGGLETOKENNNNNNNN");
         }
     }
 
-    public void setFreezeTime(long time){
+    private void addToken(Set<Integer> playerSet, int slot){
+        playerSet.add(slot);
+        table.placeToken(id, slot);
+    }
+
+    private void removeToken(Set<Integer> playerSet, int slot){
+        playerSet.remove(slot);
+        table.removeToken(id, slot);
+    }
+
+    public void setFreezeTime(long time) {
         freezeTime = time;
     }
 
-    public long getFreezeTime(){
+    public long getFreezeTime() {
         return freezeTime;
     }
 }
