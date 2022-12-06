@@ -127,19 +127,22 @@ public class Dealer implements Runnable {
             table.placeCard(card, slot);
             availableCards.remove(card);
         }
+        if (!availableSlots.isEmpty())
+            updateTimerDisplay(true);
     }
-    private List<Integer> getAvailableSlots(){
+
+    private List<Integer> getAvailableSlots() {
         List<Integer> output = new ArrayList<>();
-        for (int i = 0; i < table.slotToCard.length; i++){
+        for (int i = 0; i < table.slotToCard.length; i++) {
             if (table.slotToCard[i] == null)
                 output.add(i);
         }
         return output;
     }
 
-    private List<Integer> getAvailableCards(){
+    private List<Integer> getAvailableCards() {
         List<Integer> output = new ArrayList<>();
-        for (int i = 0; i < table.cardToSlot.length; i++){
+        for (int i = 0; i < table.cardToSlot.length; i++) {
             if (table.cardToSlot[i] == null)
                 output.add(i);
         }
@@ -150,17 +153,22 @@ public class Dealer implements Runnable {
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
      */
     private void sleepUntilWokenOrTimeout() {
-        // TODO implement
-//        for (int i = 0; i < env.config.turnTimeoutMillis/1000; i++){
-//            try { wait(i* 1000L); } catch (InterruptedException ignored) {}
-//        }
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+        }
     }
 
     /**
      * Reset and/or update the countdown and the countdown display.
      */
     private void updateTimerDisplay(boolean reset) {
-        // TODO implement
+        if (reset)
+            reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis;
+        else {
+            long delta = reshuffleTime - System.currentTimeMillis();
+            env.ui.setCountdown(delta, env.config.turnTimeoutWarningMillis < delta);
+        }
     }
 
     /**
@@ -202,21 +210,34 @@ public class Dealer implements Runnable {
                 int[] cards = possibleSet.stream().mapToInt(Integer::intValue).toArray();
                 boolean isLegalSet = env.util.testSet(cards);
 
-                // freeze the player according to legality
-                Thread playerThread = players[nextPlayer].getThread();
-                playerThread.wait(isLegalSet ? env.config.pointFreezeMillis : env.config.penaltyFreezeMillis);
+                freezePlayer(nextPlayer, isLegalSet);
 
                 // if legal, remove tokens from sets
-                if (isLegalSet) {
-                    for (Set<Integer> set : playersTokens.values()) {
-                        for (int slot : cards)
-                            set.remove(slot);
-                    }
-                }
+                if (isLegalSet)
+                    removeTokensFromSets(cards);
+
             } catch (InterruptedException e) {
                 for (Integer slot : possibleSet)
                     table.getSlotLock(slot).release();
             }
+        }
+    }
+
+    private void freezePlayer(int playerId, boolean isLegalSet) {
+        Thread playerThread = players[playerId].getThread();
+        long freezeTime = isLegalSet ? env.config.pointFreezeMillis : env.config.penaltyFreezeMillis;
+        try {
+            playerThread.wait(freezeTime);
+            env.ui.setFreeze(playerId, freezeTime);
+        } catch (InterruptedException e) {
+            System.out.println("THERE IS AN ERROR HERE!!!!!!!!!!!!!!!!!!!!!!");
+        }
+    }
+
+    private void removeTokensFromSets(int[] cards) {
+        for (Set<Integer> set : playersTokens.values()) {
+            for (int slot : cards)
+                set.remove(slot);
         }
     }
 }
