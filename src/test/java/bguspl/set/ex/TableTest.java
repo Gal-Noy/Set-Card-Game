@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -29,11 +30,12 @@ class TableTest {
         properties.put("TableDelaySeconds", "0");
         properties.put("PlayerKeys1", "81,87,69,82");
         properties.put("PlayerKeys2", "85,73,79,80");
-        Config config = new Config(properties);
+        MockLogger logger = new MockLogger();
+        Config config = new Config(logger, properties);
         slotToCard = new Integer[config.tableSize];
         cardToSlot = new Integer[config.deckSize];
 
-        Env env = new Env(config, new MockUserInterface(), new MockUtil());
+        Env env = new Env(logger, config, new MockUserInterface(), new MockUtil());
         table = new Table(env, slotToCard, cardToSlot);
     }
 
@@ -137,6 +139,12 @@ class TableTest {
         @Override
         public List<int[]> findSets(List<Integer> deck, int count) {
             return null;
+        }
+    }
+
+    static class MockLogger extends Logger {
+        protected MockLogger() {
+            super("", null);
         }
     }
 }

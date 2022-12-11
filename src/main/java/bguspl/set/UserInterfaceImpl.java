@@ -4,6 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.FileNotFoundException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
@@ -16,24 +19,28 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
     private final GamePanel gamePanel;
     private final PlayersPanel playersPanel;
     private final WinnerPanel winnerPanel;
+    private final Logger logger;
+    private final Config config;
 
     static String intInBaseToPaddedString(int n, int padding, int base) {
         return format("%" + padding + "s", Integer.toString(n, base)).replace(' ', '0');
     }
 
-    public UserInterfaceImpl(Config config) {
+    public UserInterfaceImpl(Logger logger, Config config) {
 
-        timerPanel = new TimerPanel(config);
-        gamePanel = new GamePanel(config);
-        playersPanel = new PlayersPanel(config);
-        winnerPanel = new WinnerPanel(config);
+        this.logger = logger;
+        this.config = config;
+        timerPanel = new TimerPanel();
+        gamePanel = new GamePanel();
+        playersPanel = new PlayersPanel();
+        winnerPanel = new WinnerPanel();
 
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.fill = GridBagConstraints.CENTER;
         gbc.gridwidth = GridBagConstraints.REMAINDER;
 
         add(timerPanel, gbc);
@@ -56,7 +63,7 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
-    private static class TimerPanel extends JPanel {
+    private class TimerPanel extends JPanel {
 
         private final JLabel timerField;
 
@@ -67,7 +74,7 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
                 return format("Remaining Time: %d", millies / 1000L);
         }
 
-        private TimerPanel(Config config) {
+        private TimerPanel() {
             timerField = new JLabel(config.turnTimeoutMillis < 0 ? "PLAY" : "GET READY...");
 
             // set fonts and color
@@ -79,7 +86,7 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
 
         private void setCountdown(long millies, boolean warn) {
             timerField.setText(generateTime(millies, warn));
-            timerField.setBackground(warn ? Color.RED : Color.BLACK);
+            timerField.setForeground(warn ? Color.RED : Color.BLACK);
         }
 
         private void setElapsed(long millies) {
@@ -87,9 +94,8 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
     }
 
-    private static class GamePanel extends JLayeredPane {
+    private class GamePanel extends JLayeredPane {
 
-        private final Config config;
         private final Image emptyCard;
         private final Image[] deck;
         private final Image[][] grid;
@@ -103,9 +109,7 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
             return new ImageIcon(imageResource).getImage();
         }
 
-        private GamePanel(Config config) {
-
-            this.config = config;
+        private GamePanel() {
 
             setPreferredSize(new Dimension(config.columns * config.cellWidth, config.rows * config.cellHeight));
 
@@ -139,6 +143,7 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
 
         private void placeCard(int slot, int card) {
+            logger.log(Level.SEVERE, "placing card " + card + " in slot " + slot);
             int row = slot / config.columns;
             int column = slot % config.columns;
             grid[row][column] = deck[card];
@@ -147,6 +152,7 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
 
         private void removeCard(int slot) {
+            logger.log(Level.SEVERE, "removing card from slot " + slot);
             int row = slot / config.columns;
             int column = slot % config.columns;
             grid[row][column] = emptyCard;
@@ -155,6 +161,7 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
 
         private void placeToken(int player, int slot) {
+            logger.log(Level.SEVERE, "player " + player + " placing token on slot " + slot);
             int row = slot / config.columns;
             int column = slot % config.columns;
             playerTokens[player][row][column] = true;
@@ -162,11 +169,13 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
 
         private void removeTokens() {
+            logger.log(Level.SEVERE, "removing all tokens");
             for (int i = 0; i < config.tableSize; i++)
                 removeTokens(i);
         }
 
         private void removeTokens(int slot) {
+            logger.log(Level.SEVERE, "removing tokens from slot " + slot);
             int row = slot / config.columns;
             int column = slot % config.columns;
             for (int player = 0; player < playerTokens.length; player++) {
@@ -176,6 +185,7 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
 
         private void removeToken(int player, int slot) {
+            logger.log(Level.SEVERE, "removing player " + player + " token from slot " + slot);
             int row = slot / config.columns;
             int column = slot % config.columns;
             playerTokens[player][row][column] = false;
@@ -203,14 +213,13 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
     }
 
-    private static class PlayersPanel extends JPanel {
+    private class PlayersPanel extends JPanel {
 
-        private final Config config;
         private final JLabel[][] playersTable;
 
-        private PlayersPanel(Config config) {
-            this.config = config;
+        private PlayersPanel() {
             this.setLayout(new GridLayout(2, config.players));
+            this.setPreferredSize(new Dimension(config.players * config.PlayerCellWidth, config.rows * config.PlayerCellHeight));
             this.playersTable = new JLabel[2][config.players];
             for (int i = 0; i < config.players; i++) {
                 this.playersTable[0][i] = new JLabel(config.playerNames[i]);
@@ -228,10 +237,12 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
 
         private void setScore(int player, int score) {
+            logger.log(Level.SEVERE, "setting player " + player + " score to " + score);
             playersTable[1][player].setText(Integer.toString(score));
         }
 
         private void setFreeze(int player, long millies) {
+            logger.log(Level.SEVERE, "setting player " + player + " freeze to " + millies);
             if (millies > 0) {
                 this.playersTable[0][player].setText(config.playerNames[player] + " (" + millies / 1000 + ")");
                 this.playersTable[0][player].setForeground(Color.RED);
@@ -242,13 +253,11 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
     }
 
-    private static class WinnerPanel extends JPanel {
+    private class WinnerPanel extends JPanel {
 
-        private final Config config;
         private final JLabel winnerAnnouncement;
 
-        public WinnerPanel(Config config) {
-            this.config = config;
+        public WinnerPanel() {
             this.setVisible(false);
 
             this.winnerAnnouncement = new JLabel();
@@ -259,7 +268,8 @@ public class UserInterfaceImpl extends JFrame implements UserInterface {
         }
 
         private void announceWinner(int[] players) {
-            if(players.length == 1)
+            logger.log(Level.SEVERE, "announcing winners: " + Arrays.toString(players));
+            if (players.length == 1)
                 winnerAnnouncement.setText("THE WINNER IS: " + config.playerNames[players[0]] + "!!!");
             else {
                 String text = "";

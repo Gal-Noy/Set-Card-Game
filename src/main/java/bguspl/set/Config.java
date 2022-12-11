@@ -7,6 +7,8 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class holds all the game's configuration data
@@ -105,6 +107,16 @@ public class Config {
     public final int cellHeight;
 
     /**
+     * The Width (in pixeks) of player name cell
+     */
+    public final int PlayerCellWidth;
+
+    /**
+     * The Height (in pixeks) of player name cell
+     */
+    public final int PlayerCellHeight;
+
+    /**
      * The size of the displayed font
      */
     public final int fontSize;
@@ -130,34 +142,32 @@ public class Config {
      * as a resource.
      *
      * @param filename - the name of the configuration file.
-     *
-     * @return         - a properties object with the configuration file contents.
+     * @return - a properties object with the configuration file contents.
      */
-    private static Properties loadProperties(String filename) {
+    private static Properties loadProperties(String filename, Logger logger) {
 
         Properties properties = new Properties();
 
         try (InputStream is = Files.newInputStream(Paths.get(filename))) {
             properties.load(is);
         } catch (IOException e) {
-            System.out.printf("Info: cannot read configuration file %s trying from resources.%n", filename);
+            logger.log(Level.INFO, "cannot read configuration file " + filename + " trying from resources.");
             try (InputStream is = Config.class.getClassLoader().getResourceAsStream(filename)) {
                 properties.load(is);
-                System.out.printf("Info: configuration file was loaded from resources directory.%n", filename);
+                logger.log(Level.INFO, "configuration file was loaded from resources directory.");
             } catch (IOException | InvalidPathException ex) {
-                System.out.println("Warning: cannot read config file from the resources directory either. Using defaults.");
+                logger.log(Level.WARNING, "cannot read config file from the resources directory either. Using defaults.");
             }
         }
 
         return properties;
     }
 
-    public Config(String configFilename) {
-
-        this(loadProperties(configFilename));
+    public Config(Logger logger, String configFilename) {
+        this(logger, loadProperties(configFilename, logger));
     }
 
-    public Config(Properties properties) {
+    public Config(Logger logger, Properties properties) {
 
         // cards data
         featureSize = Integer.parseInt(properties.getProperty("FeatureSize", "3"));
@@ -186,6 +196,8 @@ public class Config {
         tableSize = rows * columns;
         cellWidth = Integer.parseInt(properties.getProperty("CellWidth", "258"));
         cellHeight = Integer.parseInt(properties.getProperty("CellHeight", "167"));
+        PlayerCellWidth = Integer.parseInt(properties.getProperty("PlayerCellWidth", "300"));
+        PlayerCellHeight = Integer.parseInt(properties.getProperty("PlayerCellHeight", "40"));
         fontSize = Integer.parseInt(properties.getProperty("FontSize", "40"));
 
         // keyboard input data
@@ -197,7 +209,7 @@ public class Config {
             if (playerKeysString.length() > 0) {
                 String[] codes = playerKeysString.split(",");
                 if (codes.length != tableSize)
-                    System.out.printf("Warning: player %d keys (%d) mismatch table size (%d).%n", i + 1, codes.length, tableSize);
+                    logger.log(Level.WARNING, "player " + (i + 1) + " keys (" + codes.length + ") mismatch table size (" + tableSize + ").");
                 for (int j = 0; j < Math.min(codes.length, tableSize); ++j) // parse the key codes string
                     playerKeys[i][j] = Integer.parseInt(codes[j]);
             }

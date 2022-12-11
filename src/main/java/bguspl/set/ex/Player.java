@@ -2,9 +2,7 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
-import java.util.*;
-import java.util.concurrent.Semaphore;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * This class manages the players' threads and data
@@ -60,7 +58,7 @@ public class Player implements Runnable {
     /**
      * Player's chosen slots.
      */
-    private Queue<Integer> chosenSlots;
+    private final ConcurrentLinkedQueue<Integer> chosenSlots;
 
     private long freezeTime = -1;
 
@@ -79,7 +77,7 @@ public class Player implements Runnable {
         this.id = id;
         this.human = human;
         this.dealer = dealer;
-        this.chosenSlots = new ArrayDeque<>();
+        this.chosenSlots = new ConcurrentLinkedQueue<>();
     }
 
     /**
@@ -92,11 +90,16 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
-            if (chosenSlots.isEmpty()) continue;
-
-            // if can:
-            int nextSlot = chosenSlots.remove();
-            toggleToken(nextSlot);
+            synchronized (this) {
+                while (chosenSlots.isEmpty() || !table.tableReady || freezeTime >= System.currentTimeMillis()) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        System.out.println("Player run wait");
+                    }
+                }
+            }
+            if (table.tableReady) dealer.toggleToken(id, chosenSlots.remove());
         }
         if (!human) try {
             aiThread.join();
@@ -143,17 +146,10 @@ public class Player implements Runnable {
      *
      * @param slot - the slot corresponding to the key pressed.
      */
-    public void keyPressed(int slot) {
-        if (freezeTime >= System.currentTimeMillis()) return;
-
-        Semaphore slotLock = table.getSlotLock(slot);
-        try {
-            slotLock.acquire();
-            if (chosenSlots.size() < env.config.featureSize)
-                chosenSlots.add(slot);
-            slotLock.release();
-        } catch (InterruptedException e) {
-            System.out.println("ERROR IN PLAYAAAAA!!!!!!!!!!!!!!!!!!!!!!");
+    public synchronized void keyPressed(int slot) {
+        if (table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
+            chosenSlots.add(slot);
+            notifyAll();
         }
     }
 
@@ -164,7 +160,7 @@ public class Player implements Runnable {
      * @post - the player's score is updated in the ui.
      */
     public void point() {
-        // TODO implement
+        freezeTime = Long.sum(System.currentTimeMillis(), env.config.pointFreezeMillis);
 
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
@@ -174,7 +170,7 @@ public class Player implements Runnable {
      * Penalize a player and perform other related actions.
      */
     public void penalty() {
-        // TODO implement
+        freezeTime = Long.sum(System.currentTimeMillis(), env.config.penaltyFreezeMillis);
     }
 
     public int getScore() {
@@ -191,47 +187,6 @@ public class Player implements Runnable {
 
     public int getId() {
         return id;
-    }
-
-    public void toggleToken(int slot) {
-        Semaphore slotLock = table.getSlotLock(slot);
-
-        try {
-            slotLock.acquire();
-
-            Set<Integer> playerSet = dealer.getPlayerSet(id);
-            boolean containsSlot = playerSet.contains(slot);
-
-            if (playerSet.size() < env.config.featureSize) {
-                if (containsSlot)
-                    removeToken(playerSet, slot);
-                else{
-                    addToken(playerSet, slot);
-
-                    // Updated to three
-                    if (playerSet.size() == env.config.featureSize) {
-                        dealer.addPossible(id);
-                        dealer.getThread().interrupt(); // Wakes the dealer
-                    }
-                }
-            } else if (containsSlot)
-                removeToken(playerSet, slot);
-
-            slotLock.release();
-
-        } catch (InterruptedException e) {
-            System.out.println("ANOTHER ERROR IN TOGGLETOKENNNNNNNN");
-        }
-    }
-
-    private void addToken(Set<Integer> playerSet, int slot){
-        playerSet.add(slot);
-        table.placeToken(id, slot);
-    }
-
-    private void removeToken(Set<Integer> playerSet, int slot){
-        playerSet.remove(slot);
-        table.removeToken(id, slot);
     }
 
     public void setFreezeTime(long time) {

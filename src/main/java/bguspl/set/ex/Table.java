@@ -29,11 +29,8 @@ public class Table {
      * Mapping between a card and the slot it is in (null if none).
      */
     protected final Integer[] cardToSlot; // slot per card (if any)
-    /**
-     * For every slot, hold a lock
-     */
-    protected final Semaphore[] slotLocks;
 
+    protected volatile boolean tableReady;
     /**
      * Constructor for testing.
      *
@@ -46,10 +43,7 @@ public class Table {
         this.env = env;
         this.slotToCard = slotToCard;
         this.cardToSlot = cardToSlot;
-        this.slotLocks = new Semaphore[slotToCard.length];
-        for (int i = 0; i < slotLocks.length; i++){
-            slotLocks[i] = new Semaphore(1, true);
-        }
+        this.tableReady = false;
     }
 
     /**
@@ -111,14 +105,14 @@ public class Table {
      * Removes a card from a grid slot on the table.
      * @param slot - the slot from which to remove the card.
      */
-    public void removeCard(int slot) {
+    public void removeCard(int slot, boolean removeFromDeck) {
         try {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {}
 
         int cardIdx = slotToCard[slot];
         slotToCard[slot] = null;
-        cardToSlot[cardIdx] = null;
+        cardToSlot[cardIdx] = removeFromDeck ? -1 : null;
 
         // Display changes on ui
         env.ui.removeCard(slot);
@@ -142,9 +136,5 @@ public class Table {
     public boolean removeToken(int player, int slot) {
         env.ui.removeToken(player, slot);
         return true;
-    }
-
-    public Semaphore getSlotLock(int slot){
-        return slotLocks[slot];
     }
 }

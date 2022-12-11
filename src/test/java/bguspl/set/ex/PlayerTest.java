@@ -11,6 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.logging.Logger;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
@@ -29,6 +31,8 @@ class PlayerTest {
     private Table table;
     @Mock
     private Dealer dealer;
+    @Mock
+    private Logger logger;
 
     void assertInvariants() {
         assertTrue(player.id >= 0);
@@ -38,7 +42,7 @@ class PlayerTest {
     @BeforeEach
     void setUp() {
         // purposely do not find the configuration files (use defaults here).
-        Env env = new Env(new Config(""), ui, util);
+        Env env = new Env(logger, new Config(logger, ""), ui, util);
         player = new Player(env, dealer, table, 0, false);
         assertInvariants();
     }
