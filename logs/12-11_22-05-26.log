@@ -1,0 +1,32 @@
+[2022-12-11 22:05:26] [INFO   ] cannot read configuration file config.properties trying from resources.
+[2022-12-11 22:05:26] [INFO   ] configuration file was loaded from resources directory.
+[2022-12-11 22:05:26] [SEVERE ] placing card 44 in slot 0
+[2022-12-11 22:05:26] [SEVERE ] placing card 16 in slot 1
+[2022-12-11 22:05:26] [SEVERE ] placing card 7 in slot 2
+[2022-12-11 22:05:26] [SEVERE ] placing card 79 in slot 3
+[2022-12-11 22:05:27] [SEVERE ] placing card 39 in slot 4
+[2022-12-11 22:05:27] [SEVERE ] placing card 71 in slot 5
+[2022-12-11 22:05:27] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 22:05:27] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 22:05:27] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 22:05:27] [SEVERE ] placing card 52 in slot 6
+[2022-12-11 22:05:27] [SEVERE ] placing card 74 in slot 7
+[2022-12-11 22:05:27] [SEVERE ] placing card 73 in slot 8
+[2022-12-11 22:05:27] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 22:05:27] [SEVERE ] placing card 49 in slot 9
+[2022-12-11 22:05:27] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 22:05:27] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 22:05:27] [SEVERE ] placing card 45 in slot 10
+[2022-12-11 22:05:27] [SEVERE ] placing card 4 in slot 11
+[2022-12-11 22:05:27] [SEVERE ] setting player 0 freeze to -1670789127841
+[2022-12-11 22:05:27] [SEVERE ] setting player 1 freeze to -1670789127842
+[2022-12-11 22:05:28] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 22:05:28] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 22:05:28] [SEVERE ] setting player 0 freeze to -1670789128853
+[2022-12-11 22:05:28] [SEVERE ] setting player 1 freeze to -1670789128854
+[2022-12-11 22:05:29] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 22:05:29] [SEVERE ] player 0 placing token on slot 6
+[2022-12-11 22:05:29] [SEVERE ] setting player 0 freeze to -1670789129863
+[2022-12-11 22:05:29] [SEVERE ] setting player 1 freeze to -1670789129864
+[2022-12-11 22:05:30] [SEVERE ] setting player 0 freeze to -1670789130876
+[2022-12-11 22:05:30] [SEVERE ] setting player 1 freeze to -1670789130877

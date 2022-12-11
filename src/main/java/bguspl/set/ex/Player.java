@@ -123,7 +123,7 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
             while (!terminate) {
-                List<Integer> slots = IntStream.rangeClosed(0, env.config.tableSize).boxed().collect(Collectors.toList());
+                List<Integer> slots = IntStream.rangeClosed(0, env.config.tableSize-1).boxed().collect(Collectors.toList());
                 Collections.shuffle(slots);
 
                 int[] clicked = new int[env.config.featureSize];
@@ -185,7 +185,7 @@ public class Player implements Runnable {
      * @post - the player's score is increased by 1.
      * @post - the player's score is updated in the ui.
      */
-    public synchronized void point() {
+    public void point() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.pointFreezeMillis);
 
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests

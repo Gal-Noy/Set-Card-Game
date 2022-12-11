@@ -97,6 +97,7 @@ public class Dealer implements Runnable {
             updateTimerDisplay(false);
             removeCardsFromTable();
             placeCardsOnTable();
+            if (!table.tableReady) table.tableReady = true;
         }
     }
 
@@ -130,7 +131,6 @@ public class Dealer implements Runnable {
             for (int slot : setToRemove)
                 table.removeCard(slot, true);
         }
-        table.tableReady = true;
     }
 
     /**
@@ -147,7 +147,6 @@ public class Dealer implements Runnable {
         }
         if (!availableSlots.isEmpty()) {
             updateTimerDisplay(true);
-            table.tableReady = true;
             table.hints();
         }
     }
@@ -283,7 +282,6 @@ public class Dealer implements Runnable {
                     removeToken(playerId, slot);
             }
         }
-        table.tableReady = true;
     }
 
     public void toggleToken(int playerId, int slot) {

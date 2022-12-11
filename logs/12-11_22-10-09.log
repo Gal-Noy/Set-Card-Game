@@ -1,0 +1,5 @@
+[2022-12-11 22:10:09] [INFO   ] cannot read configuration file config.properties trying from resources.
+[2022-12-11 22:10:09] [INFO   ] configuration file was loaded from resources directory.
+[2022-12-11 22:10:43] [SEVERE ] placing card 30 in slot 0
+[2022-12-11 22:10:45] [SEVERE ] placing card 42 in slot 1
+[2022-12-11 22:11:13] [SEVERE ] placing card 37 in slot 2
