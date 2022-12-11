@@ -1,0 +1,28 @@
+[2022-12-11 18:57:31] [INFO   ] cannot read configuration file config.properties trying from resources.
+[2022-12-11 18:57:31] [INFO   ] configuration file was loaded from resources directory.
+[2022-12-11 18:57:32] [SEVERE ] placing card 49 in slot 0
+[2022-12-11 18:57:32] [SEVERE ] placing card 15 in slot 1
+[2022-12-11 18:57:32] [SEVERE ] placing card 60 in slot 2
+[2022-12-11 18:57:32] [SEVERE ] placing card 17 in slot 3
+[2022-12-11 18:57:32] [SEVERE ] placing card 45 in slot 4
+[2022-12-11 18:57:33] [SEVERE ] placing card 52 in slot 5
+[2022-12-11 18:57:33] [SEVERE ] placing card 72 in slot 6
+[2022-12-11 18:57:33] [SEVERE ] placing card 30 in slot 7
+[2022-12-11 18:57:33] [SEVERE ] placing card 38 in slot 8
+[2022-12-11 18:57:33] [SEVERE ] placing card 61 in slot 9
+[2022-12-11 18:57:33] [SEVERE ] placing card 53 in slot 10
+[2022-12-11 18:57:33] [SEVERE ] placing card 22 in slot 11
+[2022-12-11 18:57:33] [SEVERE ] setting player 0 freeze to -1670777853762
+[2022-12-11 18:57:33] [SEVERE ] setting player 1 freeze to -1670777853762
+[2022-12-11 18:57:34] [SEVERE ] setting player 0 freeze to -1670777854777
+[2022-12-11 18:57:34] [SEVERE ] setting player 1 freeze to -1670777854777
+[2022-12-11 18:57:35] [SEVERE ] setting player 0 freeze to -1670777855793
+[2022-12-11 18:57:35] [SEVERE ] setting player 1 freeze to -1670777855794
+[2022-12-11 18:57:36] [SEVERE ] setting player 0 freeze to -1670777856807
+[2022-12-11 18:57:36] [SEVERE ] setting player 1 freeze to -1670777856808
+[2022-12-11 18:57:37] [SEVERE ] setting player 0 freeze to -1670777857824
+[2022-12-11 18:57:37] [SEVERE ] setting player 1 freeze to -1670777857824
+[2022-12-11 18:57:38] [SEVERE ] setting player 0 freeze to -1670777858836
+[2022-12-11 18:57:38] [SEVERE ] setting player 1 freeze to -1670777858837
+[2022-12-11 18:57:39] [SEVERE ] setting player 0 freeze to -1670777859843
+[2022-12-11 18:57:39] [SEVERE ] setting player 1 freeze to -1670777859843

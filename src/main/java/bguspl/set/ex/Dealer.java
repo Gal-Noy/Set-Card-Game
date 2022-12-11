@@ -244,27 +244,27 @@ public class Dealer implements Runnable {
         return playersTokens.get(playerId);
     }
 
-//    public void enqueuePlayer(int playerId) {
-//        setsToCheckByPlayer.add(playerId);
-//    }
-
-    private void examineSets() {
+    private synchronized void examineSets() {
         while (!setsToCheckByPlayer.isEmpty()) {
             int nextPlayer = setsToCheckByPlayer.remove();
             Set<Integer> possibleSet = playersTokens.get(nextPlayer);
 
             synchronized (possibleSet) {
                 // common tokens with previously removed set
-                if (possibleSet.size() != env.config.featureSize) continue;
+                if (possibleSet.size() != env.config.featureSize){
+                    System.out.println("TOO LATE");
+                    continue;
+                }
 
                 // Check the set for legality
                 int[] slotsToExamine = possibleSet.stream().mapToInt(Integer::intValue).toArray();
                 int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
-                boolean isLegalSet = env.util.testSet(cardsToExamine);
 
+                boolean isLegalSet = env.util.testSet(cardsToExamine);
                 Player player = players[nextPlayer];
-                // if legal, remove tokens from sets
-                if (isLegalSet) {
+
+
+                if (isLegalSet) { // if legal, remove tokens from relevant sets
                     setsToRemove.add(slotsToExamine);
                     removeWinningTokens(slotsToExamine);
                     player.point();

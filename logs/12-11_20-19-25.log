@@ -1,0 +1,28 @@
+[2022-12-11 20:19:25] [INFO   ] cannot read configuration file config.properties trying from resources.
+[2022-12-11 20:19:25] [INFO   ] configuration file was loaded from resources directory.
+[2022-12-11 20:19:26] [SEVERE ] placing card 67 in slot 0
+[2022-12-11 20:19:26] [SEVERE ] placing card 3 in slot 1
+[2022-12-11 20:19:26] [SEVERE ] placing card 41 in slot 2
+[2022-12-11 20:19:26] [SEVERE ] placing card 58 in slot 3
+[2022-12-11 20:19:26] [SEVERE ] placing card 6 in slot 4
+[2022-12-11 20:19:26] [SEVERE ] placing card 27 in slot 5
+[2022-12-11 20:19:26] [SEVERE ] placing card 7 in slot 6
+[2022-12-11 20:19:27] [SEVERE ] placing card 68 in slot 7
+[2022-12-11 20:19:27] [SEVERE ] placing card 14 in slot 8
+[2022-12-11 20:19:27] [SEVERE ] placing card 65 in slot 9
+[2022-12-11 20:19:27] [SEVERE ] placing card 63 in slot 10
+[2022-12-11 20:19:27] [SEVERE ] placing card 0 in slot 11
+[2022-12-11 20:19:27] [SEVERE ] setting player 0 freeze to -1670782767491
+[2022-12-11 20:19:27] [SEVERE ] setting player 1 freeze to -1670782767492
+[2022-12-11 20:19:28] [SEVERE ] setting player 0 freeze to -1670782768502
+[2022-12-11 20:19:28] [SEVERE ] setting player 1 freeze to -1670782768503
+[2022-12-11 20:19:29] [SEVERE ] setting player 0 freeze to -1670782769513
+[2022-12-11 20:19:29] [SEVERE ] setting player 1 freeze to -1670782769514
+[2022-12-11 20:19:30] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 20:19:30] [SEVERE ] player 0 placing token on slot 4
+[2022-12-11 20:19:30] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 20:19:30] [SEVERE ] player 0 placing token on slot 5
+[2022-12-11 20:19:30] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 20:19:30] [SEVERE ] player 0 placing token on slot 6
+[2022-12-11 20:19:33] [SEVERE ] setting player 0 freeze to -6
+[2022-12-11 20:19:33] [SEVERE ] setting player 1 freeze to -1670782773080

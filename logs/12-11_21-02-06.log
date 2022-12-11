@@ -1,0 +1,97 @@
+[2022-12-11 21:02:06] [INFO   ] cannot read configuration file config.properties trying from resources.
+[2022-12-11 21:02:06] [INFO   ] configuration file was loaded from resources directory.
+[2022-12-11 21:02:07] [SEVERE ] placing card 75 in slot 0
+[2022-12-11 21:02:07] [SEVERE ] placing card 64 in slot 1
+[2022-12-11 21:02:07] [SEVERE ] placing card 6 in slot 2
+[2022-12-11 21:02:07] [SEVERE ] placing card 10 in slot 3
+[2022-12-11 21:02:07] [SEVERE ] placing card 79 in slot 4
+[2022-12-11 21:02:07] [SEVERE ] placing card 36 in slot 5
+[2022-12-11 21:02:08] [SEVERE ] placing card 49 in slot 6
+[2022-12-11 21:02:08] [SEVERE ] placing card 67 in slot 7
+[2022-12-11 21:02:08] [SEVERE ] placing card 56 in slot 8
+[2022-12-11 21:02:08] [SEVERE ] placing card 16 in slot 9
+[2022-12-11 21:02:08] [SEVERE ] placing card 24 in slot 10
+[2022-12-11 21:02:08] [SEVERE ] placing card 20 in slot 11
+[2022-12-11 21:02:08] [SEVERE ] setting player 0 freeze to -1670785328632
+[2022-12-11 21:02:08] [SEVERE ] setting player 1 freeze to -1670785328633
+[2022-12-11 21:02:09] [SEVERE ] setting player 0 freeze to -1670785329641
+[2022-12-11 21:02:09] [SEVERE ] setting player 1 freeze to -1670785329642
+[2022-12-11 21:02:09] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 21:02:09] [SEVERE ] player 0 placing token on slot 6
+[2022-12-11 21:02:09] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 21:02:09] [SEVERE ] player 0 placing token on slot 5
+[2022-12-11 21:02:09] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 21:02:09] [SEVERE ] player 0 placing token on slot 4
+[2022-12-11 21:02:09] [SEVERE ] setting player 0 freeze to 3000
+[2022-12-11 21:02:09] [SEVERE ] setting player 1 freeze to -1670785329939
+[2022-12-11 21:02:10] [SEVERE ] setting player 0 freeze to 1996
+[2022-12-11 21:02:10] [SEVERE ] setting player 1 freeze to -1670785330943
+[2022-12-11 21:02:11] [SEVERE ] setting player 0 freeze to 984
+[2022-12-11 21:02:11] [SEVERE ] setting player 1 freeze to -1670785331964
+[2022-12-11 21:02:11] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 21:02:12] [SEVERE ] setting player 0 freeze to -41
+[2022-12-11 21:02:12] [SEVERE ] setting player 1 freeze to -1670785332980
+[2022-12-11 21:02:13] [SEVERE ] setting player 0 freeze to -1052
+[2022-12-11 21:02:13] [SEVERE ] setting player 1 freeze to -1670785333991
+[2022-12-11 21:02:14] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 21:02:14] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 21:02:15] [SEVERE ] setting player 0 freeze to -2067
+[2022-12-11 21:02:15] [SEVERE ] setting player 1 freeze to -1670785335006
+[2022-12-11 21:02:16] [SEVERE ] setting player 0 freeze to -3070
+[2022-12-11 21:02:16] [SEVERE ] setting player 1 freeze to -1670785336008
+[2022-12-11 21:02:17] [SEVERE ] setting player 0 freeze to -4074
+[2022-12-11 21:02:17] [SEVERE ] setting player 1 freeze to -1670785337012
+[2022-12-11 21:02:17] [SEVERE ] removing player 0 token from slot 6
+[2022-12-11 21:02:17] [SEVERE ] player 0 placing token on slot 6
+[2022-12-11 21:02:17] [SEVERE ] setting player 0 freeze to 3000
+[2022-12-11 21:02:17] [SEVERE ] setting player 1 freeze to -1670785337060
+[2022-12-11 21:02:18] [SEVERE ] setting player 0 freeze to 1994
+[2022-12-11 21:02:18] [SEVERE ] setting player 1 freeze to -1670785338066
+[2022-12-11 21:02:19] [SEVERE ] setting player 0 freeze to 980
+[2022-12-11 21:02:19] [SEVERE ] setting player 1 freeze to -1670785339081
+[2022-12-11 21:02:20] [SEVERE ] setting player 0 freeze to -28
+[2022-12-11 21:02:20] [SEVERE ] setting player 1 freeze to -1670785340089
+[2022-12-11 21:02:21] [SEVERE ] setting player 0 freeze to -1038
+[2022-12-11 21:02:21] [SEVERE ] setting player 1 freeze to -1670785341099
+[2022-12-11 21:02:22] [SEVERE ] setting player 0 freeze to -2050
+[2022-12-11 21:02:22] [SEVERE ] setting player 1 freeze to -1670785342111
+[2022-12-11 21:02:23] [SEVERE ] setting player 0 freeze to -3064
+[2022-12-11 21:02:23] [SEVERE ] setting player 1 freeze to -1670785343125
+[2022-12-11 21:02:23] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 21:02:23] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 21:02:24] [SEVERE ] setting player 0 freeze to -4076
+[2022-12-11 21:02:24] [SEVERE ] setting player 1 freeze to -1670785344136
+[2022-12-11 21:02:25] [SEVERE ] setting player 0 freeze to -5079
+[2022-12-11 21:02:25] [SEVERE ] setting player 1 freeze to -1670785345139
+[2022-12-11 21:02:26] [SEVERE ] setting player 0 freeze to -6081
+[2022-12-11 21:02:26] [SEVERE ] setting player 1 freeze to -1670785346141
+[2022-12-11 21:02:26] [SEVERE ] removing player 0 token from slot 4
+[2022-12-11 21:02:26] [SEVERE ] removing player 0 token from slot 5
+[2022-12-11 21:02:26] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 21:02:26] [SEVERE ] removing player 0 token from slot 6
+[2022-12-11 21:02:26] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 21:02:26] [SEVERE ] player 0 placing token on slot 6
+[2022-12-11 21:02:26] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 21:02:26] [SEVERE ] player 0 placing token on slot 5
+[2022-12-11 21:02:26] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 21:02:26] [SEVERE ] player 0 placing token on slot 4
+[2022-12-11 21:02:26] [SEVERE ] setting player 0 freeze to 3000
+[2022-12-11 21:02:26] [SEVERE ] setting player 1 freeze to -1670785346543
+[2022-12-11 21:02:27] [SEVERE ] setting player 0 freeze to 1988
+[2022-12-11 21:02:27] [SEVERE ] setting player 1 freeze to -1670785347556
+[2022-12-11 21:02:28] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 21:02:28] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 21:02:28] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 21:02:28] [SEVERE ] setting player 0 freeze to 980
+[2022-12-11 21:02:28] [SEVERE ] setting player 1 freeze to -1670785348564
+[2022-12-11 21:02:28] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 21:02:28] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 21:02:28] [SEVERE ] Key 68 was pressed by player 0
+[2022-12-11 21:02:29] [SEVERE ] setting player 0 freeze to -28
+[2022-12-11 21:02:29] [SEVERE ] setting player 1 freeze to -1670785349573
+[2022-12-11 21:02:29] [SEVERE ] Key 65 was pressed by player 0
+[2022-12-11 21:02:29] [SEVERE ] Key 83 was pressed by player 0
+[2022-12-11 21:02:30] [SEVERE ] setting player 0 freeze to -1038
+[2022-12-11 21:02:30] [SEVERE ] setting player 1 freeze to -1670785350582
+[2022-12-11 21:02:31] [SEVERE ] setting player 0 freeze to -2044
+[2022-12-11 21:02:31] [SEVERE ] setting player 1 freeze to -1670785351588

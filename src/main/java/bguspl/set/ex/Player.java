@@ -2,7 +2,11 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * This class manages the players' threads and data
@@ -60,7 +64,7 @@ public class Player implements Runnable {
      */
     private final ConcurrentLinkedQueue<Integer> chosenSlots;
 
-    private long freezeTime = -1;
+    private volatile long freezeTime = -1;
 
     /**
      * The class constructor.
@@ -91,7 +95,7 @@ public class Player implements Runnable {
 
         while (!terminate) {
             synchronized (this) {
-                while (chosenSlots.isEmpty() || !table.tableReady || freezeTime >= System.currentTimeMillis()) {
+                while (chosenSlots.isEmpty() || !table.tableReady) {
                     try {
                         wait();
                     } catch (InterruptedException e) {
@@ -99,7 +103,9 @@ public class Player implements Runnable {
                     }
                 }
             }
+
             if (table.tableReady) dealer.toggleToken(id, chosenSlots.remove());
+
         }
         if (!human) try {
             aiThread.join();
@@ -117,12 +123,32 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
             while (!terminate) {
-//                List<Integer> deck = Arrays.stream(table.slotToCard).filter(Objects::nonNull).collect(Collectors.toList());
-//                env.util.findSets(deck, Integer.MAX_VALUE).forEach(set -> {
-//                    List<Integer> slots = Arrays.stream(set).mapToObj(card -> table.cardToSlot[card]).sorted().collect(Collectors.toList());
-//                    for (int slot : slots)
-//                        keyPressed(slot);
-//                });
+                List<Integer> slots = IntStream.rangeClosed(0, env.config.tableSize).boxed().collect(Collectors.toList());
+                Collections.shuffle(slots);
+
+                int[] clicked = new int[env.config.featureSize];
+                for (int i = 0; i < env.config.featureSize; i++) {
+                    int slot = slots.get(i);
+                    keyPressed(slot);
+                    clicked[i] = slot;
+                }
+
+                if (!env.util.testSet(clicked)) {
+                    try {
+                        Thread.sleep(env.config.penaltyFreezeMillis);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    for (int i = 0; i < env.config.featureSize; i++) {
+                        keyPressed(slots.get(i));
+                    }
+                } else {
+                    try {
+                        Thread.sleep(env.config.pointFreezeMillis);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
             System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
         }, "computer-" + id);
@@ -159,7 +185,7 @@ public class Player implements Runnable {
      * @post - the player's score is increased by 1.
      * @post - the player's score is updated in the ui.
      */
-    public void point() {
+    public synchronized void point() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.pointFreezeMillis);
 
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
