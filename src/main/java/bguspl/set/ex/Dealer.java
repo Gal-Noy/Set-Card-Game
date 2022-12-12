@@ -152,8 +152,10 @@ public class Dealer implements Runnable {
             table.placeCard(availableCards.get(card), slot);
             availableCards.remove(card);
         }
-        if (!availableSlots.isEmpty() && !shouldFinish())
+        if (!availableSlots.isEmpty() && !shouldFinish()) {
             updateTimerDisplay(true);
+            table.hints();
+        }
     }
 
     private List<Integer> getAvailableSlots() {
