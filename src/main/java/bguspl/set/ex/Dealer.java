@@ -92,6 +92,10 @@ public class Dealer implements Runnable {
         for (Player player : players) {
             player.setThread(new Thread(player, "player " + player.getId()));
             player.getThread().start();
+            try {
+                Thread.sleep(SECOND / players.length);
+            } catch (InterruptedException ignored) {
+            }
         }
 
         while (!shouldFinish()) {
@@ -102,8 +106,10 @@ public class Dealer implements Runnable {
         }
         if (!terminate) terminate();
 
-        for (int i = players.length-1; i >= 0; i--)
-            try {players[i].getThread().join();} catch (InterruptedException ignored) {}
+        for (int i = players.length - 1; i >= 0; i--)
+            try {
+                players[i].getThread().join();
+            } catch (InterruptedException ignored) {}
 
         announceWinners();
 
@@ -128,8 +134,13 @@ public class Dealer implements Runnable {
      * Called when the game should be terminated due to an external event.
      */
     public void terminate() {
-        for (Player player : players)
-            player.terminate();
+        for (int i = players.length - 1; i >= 0; i--) {
+            players[i].terminate();
+            try {
+                Thread.sleep(SECOND / players.length);
+            } catch (InterruptedException ignored) {
+            }
+        }
         terminate = true;
     }
 
