@@ -95,7 +95,7 @@ public class Player implements Runnable {
 
         while (!terminate) {
             synchronized (this) {
-                while (chosenSlots.isEmpty() || !table.tableReady) {
+                while (chosenSlots.isEmpty()) {
                     try {
                         wait();
                     } catch (InterruptedException e) {
@@ -123,7 +123,7 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
             while (!terminate) {
-                List<Integer> slots = IntStream.rangeClosed(0, env.config.tableSize-1).boxed().collect(Collectors.toList());
+                List<Integer> slots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().collect(Collectors.toList());
                 Collections.shuffle(slots);
 
                 int[] clicked = new int[env.config.featureSize];
@@ -173,7 +173,9 @@ public class Player implements Runnable {
      * @param slot - the slot corresponding to the key pressed.
      */
     public synchronized void keyPressed(int slot) {
-        if (table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
+        if (table.slotToCard[slot] != null && table.tableReady &&
+                freezeTime < System.currentTimeMillis() &&
+                chosenSlots.size() < env.config.featureSize) {
             chosenSlots.add(slot);
             notifyAll();
         }

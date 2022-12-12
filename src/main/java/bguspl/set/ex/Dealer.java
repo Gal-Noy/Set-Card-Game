@@ -128,8 +128,10 @@ public class Dealer implements Runnable {
 
         while (!setsToRemove.isEmpty()){
             int[] setToRemove = setsToRemove.remove();
-            for (int slot : setToRemove)
+            for (int slot : setToRemove) {
+                deck.remove(table.slotToCard[slot]);
                 table.removeCard(slot, true);
+            }
         }
     }
 
@@ -139,13 +141,16 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         List<Integer> availableSlots = getAvailableSlots();
         List<Integer> availableCards = getAvailableCards();
-        for (int slot : availableSlots) {
-            int card = (int) (Math.random() * availableCards.size());
-            table.slotToCard[slot] = card;
-            table.placeCard(availableCards.get(card), slot);
-            availableCards.remove(card);
+        System.out.println(availableCards.size());
+        if (!availableCards.isEmpty()){
+            for (int slot : availableSlots) {
+                int card = (int) (Math.random() * availableCards.size());
+                table.slotToCard[slot] = card;
+                table.placeCard(availableCards.get(card), slot);
+                availableCards.remove(card);
+            }
         }
-        if (!availableSlots.isEmpty()) {
+        if (!availableSlots.isEmpty() && !shouldFinish()) {
             updateTimerDisplay(true);
             table.hints();
         }
@@ -237,10 +242,6 @@ public class Dealer implements Runnable {
      */
     private void announceWinners() {
         // TODO implement
-    }
-
-    public Set<Integer> getPlayerSet(int playerId) {
-        return playersTokens.get(playerId);
     }
 
     private synchronized void examineSets() {
