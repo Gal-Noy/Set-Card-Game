@@ -245,7 +245,14 @@ public class Dealer implements Runnable {
      * Check who is/are the winner/s and displays them.
      */
     private void announceWinners() {
-        // TODO implement
+        int maxScore = 0;
+        for (Player player : players)
+            maxScore = Math.max(maxScore, player.getScore());
+        List<Integer> winnersIds = new ArrayList<>();
+        for (Player player : players)
+            if (player.getScore() == maxScore)
+                winnersIds.add(player.getId());
+        env.ui.announceWinner(winnersIds.stream().mapToInt(i -> i).toArray());
     }
 
     private void examineSets() {
