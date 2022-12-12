@@ -3,7 +3,9 @@ package bguspl.set.ex;
 import bguspl.set.Env;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -42,7 +44,7 @@ public class Dealer implements Runnable {
     /**
      * For each player, hold current pressed slots
      */
-    private HashMap<Integer, Set<Integer>> playersTokens;
+    private ConcurrentHashMap<Integer, ConcurrentSkipListSet<Integer>> playersTokens;
     /**
      * Queue for every player with a possible set, in order of choosing
      */
@@ -57,9 +59,9 @@ public class Dealer implements Runnable {
         this.players = players;
         this.deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
 
-        this.playersTokens = new HashMap<>();
+        this.playersTokens = new ConcurrentHashMap<>();
         for (int i = 0; i < this.players.length; i++)
-            playersTokens.put(i, new HashSet<>());
+            playersTokens.put(i, new ConcurrentSkipListSet<>());
         this.setsToCheckByPlayer = new ConcurrentLinkedQueue<>();
         this.setsToRemove = new ConcurrentLinkedQueue<>();
     }
@@ -126,7 +128,7 @@ public class Dealer implements Runnable {
     private void removeCardsFromTable() {
         table.tableReady = false;
 
-        while (!setsToRemove.isEmpty()){
+        while (!setsToRemove.isEmpty()) {
             int[] setToRemove = setsToRemove.remove();
             for (int slot : setToRemove) {
                 deck.remove(table.slotToCard[slot]);
@@ -139,21 +141,23 @@ public class Dealer implements Runnable {
      * Check if any cards can be removed from the deck and placed on the table.
      */
     private void placeCardsOnTable() {
+        table.tableReady = false;
+
         List<Integer> availableSlots = getAvailableSlots();
         List<Integer> availableCards = getAvailableCards();
         System.out.println(availableCards.size());
-        if (!availableCards.isEmpty()){
-            for (int slot : availableSlots) {
-                int card = (int) (Math.random() * availableCards.size());
-                table.slotToCard[slot] = card;
-                table.placeCard(availableCards.get(card), slot);
-                availableCards.remove(card);
-            }
+        for (int i = 0; i < availableSlots.size() && !availableCards.isEmpty(); i++) {
+            int slot = availableSlots.get(i);
+            int card = (int) (Math.random() * availableCards.size());
+            table.slotToCard[slot] = card;
+            table.placeCard(availableCards.get(card), slot);
+            availableCards.remove(card);
         }
         if (!availableSlots.isEmpty() && !shouldFinish()) {
             updateTimerDisplay(true);
             table.hints();
         }
+
     }
 
     private List<Integer> getAvailableSlots() {
@@ -181,7 +185,8 @@ public class Dealer implements Runnable {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
-            System.out.println("Morning sunshine");;
+            System.out.println("Morning sunshine");
+            ;
         }
     }
 
@@ -244,67 +249,59 @@ public class Dealer implements Runnable {
         // TODO implement
     }
 
-    private synchronized void examineSets() {
+    private void examineSets() {
         while (!setsToCheckByPlayer.isEmpty()) {
             int nextPlayer = setsToCheckByPlayer.remove();
             Set<Integer> possibleSet = playersTokens.get(nextPlayer);
 
-            synchronized (possibleSet) {
-                // common tokens with previously removed set
-                if (possibleSet.size() != env.config.featureSize){
-                    System.out.println("TOO LATE");
-                    continue;
-                }
-
-                // Check the set for legality
-                int[] slotsToExamine = possibleSet.stream().mapToInt(Integer::intValue).toArray();
-                int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
-
-                boolean isLegalSet = env.util.testSet(cardsToExamine);
-                Player player = players[nextPlayer];
-
-
-                if (isLegalSet) { // if legal, remove tokens from relevant sets
-                    setsToRemove.add(slotsToExamine);
-                    removeWinningTokens(slotsToExamine);
-                    player.point();
-                } else
-                    player.penalty();
+            // common tokens with previously removed set
+            if (possibleSet.size() != env.config.featureSize) {
+                System.out.println("TOO LATE");
+                continue;
             }
+
+            // Check the set for legality
+            int[] slotsToExamine = possibleSet.stream().mapToInt(Integer::intValue).toArray();
+            int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
+
+            boolean isLegalSet = env.util.testSet(cardsToExamine);
+            Player player = players[nextPlayer];
+
+
+            if (isLegalSet) { // if legal, remove tokens from relevant sets
+                setsToRemove.add(slotsToExamine);
+                removeWinningTokens(slotsToExamine);
+                player.point();
+            } else
+                player.penalty();
         }
     }
 
     private void removeWinningTokens(int[] winningSlots) {
         table.tableReady = false;
         for (Integer playerId : playersTokens.keySet()) {
-            Set<Integer> set = playersTokens.get(playerId);
-            synchronized (set) {
-                for (int slot : winningSlots)
-                    removeToken(playerId, slot);
-            }
+            for (int slot : winningSlots)
+                removeToken(playerId, slot);
         }
     }
 
     public void toggleToken(int playerId, int slot) {
         Set<Integer> playerSet = playersTokens.get(playerId);
         boolean containsSlot = playerSet.contains(slot);
-        synchronized (playerSet) {
-            if (playerSet.size() < env.config.featureSize) {
-                if (containsSlot)
-                    removeToken(playerId, slot);
-                else {
-                    addToken(playerId, slot);
-
-                    // Updated to three
-                    if (playerSet.size() == env.config.featureSize) {
-                        setsToCheckByPlayer.add(playerId);
-                        dealerThread.interrupt(); // Wakes the dealer
-                    }
-                }
-            } else if (containsSlot)
+        if (playerSet.size() < env.config.featureSize) {
+            if (containsSlot)
                 removeToken(playerId, slot);
-        }
+            else {
+                addToken(playerId, slot);
 
+                // Updated to three
+                if (playerSet.size() == env.config.featureSize) {
+                    setsToCheckByPlayer.add(playerId);
+                    dealerThread.interrupt(); // Wakes the dealer
+                }
+            }
+        } else if (containsSlot)
+            removeToken(playerId, slot);
     }
 
     private void addToken(int playerId, int slot) {
