@@ -145,7 +145,6 @@ public class Dealer implements Runnable {
 
         List<Integer> availableSlots = getAvailableSlots();
         List<Integer> availableCards = getAvailableCards();
-        System.out.println(availableCards.size());
         for (int i = 0; i < availableSlots.size() && !availableCards.isEmpty(); i++) {
             int slot = availableSlots.get(i);
             int card = (int) (Math.random() * availableCards.size());
@@ -254,15 +253,15 @@ public class Dealer implements Runnable {
             int nextPlayer = setsToCheckByPlayer.remove();
             Set<Integer> possibleSet = playersTokens.get(nextPlayer);
 
-            // common tokens with previously removed set
-            if (possibleSet.size() != env.config.featureSize) {
-                System.out.println("TOO LATE");
-                continue;
-            }
-
             // Check the set for legality
             int[] slotsToExamine = possibleSet.stream().mapToInt(Integer::intValue).toArray();
             int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
+
+            // common tokens with previously removed set
+            if (cardsToExamine.length != env.config.featureSize) {
+                System.out.println("TOO LATE");
+                continue;
+            }
 
             boolean isLegalSet = env.util.testSet(cardsToExamine);
             Player player = players[nextPlayer];

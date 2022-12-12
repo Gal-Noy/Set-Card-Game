@@ -103,9 +103,11 @@ public class Player implements Runnable {
                     }
                 }
             }
-
-            if (table.tableReady) dealer.toggleToken(id, chosenSlots.remove());
-
+            if (table.tableReady) {
+                int clickedSlot = chosenSlots.remove();
+                if (table.slotToCard[clickedSlot] != null)
+                    dealer.toggleToken(id, clickedSlot);
+            }
         }
         if (!human) try {
             aiThread.join();
@@ -173,9 +175,7 @@ public class Player implements Runnable {
      * @param slot - the slot corresponding to the key pressed.
      */
     public synchronized void keyPressed(int slot) {
-        if (table.slotToCard[slot] != null && table.tableReady &&
-                freezeTime < System.currentTimeMillis() &&
-                chosenSlots.size() < env.config.featureSize) {
+        if (table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
             chosenSlots.add(slot);
             notifyAll();
         }
