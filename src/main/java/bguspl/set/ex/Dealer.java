@@ -104,6 +104,9 @@ public class Dealer implements Runnable {
             updateTimerDisplay(false);
             removeAllCardsFromTable();
         }
+
+        announceWinners();
+
         if (!terminate) terminate();
 
         for (int i = players.length - 1; i >= 0; i--)
@@ -111,7 +114,6 @@ public class Dealer implements Runnable {
                 players[i].getThread().join();
             } catch (InterruptedException ignored) {}
 
-        announceWinners();
 
         System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
     }
@@ -188,7 +190,7 @@ public class Dealer implements Runnable {
 
         if (tableFilled && !shouldFinish()) {
             updateTimerDisplay(true);
-//            table.hints();
+            table.hints();
         }
     }
 
@@ -241,23 +243,27 @@ public class Dealer implements Runnable {
 
         long currentMillis = System.currentTimeMillis();
 
+        for (Player player : players)
+            env.ui.setFreeze(player.getId(), formatTime(player.getFreezeTime() - currentMillis));
+
         if (gameMode == Mode.Timer) {
             if (reset) {
                 reshuffleTime = currentMillis + env.config.turnTimeoutMillis;
                 for (Player player : players)
                     player.setFreezeTime(-1);
             }
-            long delta = reshuffleTime - currentMillis;
+            long delta = formatTime(reshuffleTime - currentMillis);
             env.ui.setCountdown(delta, env.config.turnTimeoutWarningMillis >= delta);
 
         } else if (gameMode == Mode.Elapsed) {
-            if (reset)
+            if (reset) {
                 elapsedTime = currentMillis;
-            env.ui.setElapsed(currentMillis - elapsedTime);
+            }
+            env.ui.setElapsed(formatTime(currentMillis - elapsedTime));
         }
-        for (Player player : players)
-            env.ui.setFreeze(player.getId(), player.getFreezeTime() - currentMillis);
     }
+
+    private long formatTime(long millis){return (millis + SECOND/2) / SECOND * SECOND;}
 
     /**
      * Returns all the cards from the table to the deck.
@@ -272,8 +278,6 @@ public class Dealer implements Runnable {
             table.cardToSlot[table.slotToCard[slot]] = null;
             table.removeCard(slot, false);
         }
-
-        updateTimerDisplay(true);
     }
 
     private List<Integer> getOccupiedSlots() {
