@@ -95,10 +95,10 @@ public class Player implements Runnable {
 
         while (!terminate) {
             synchronized (this) {
-                while (chosenSlots.isEmpty())
+                while (chosenSlots.isEmpty() && !terminate)
                     try {wait();} catch (InterruptedException ignored) {}
             }
-            if (table.tableReady) {
+            if (table.tableReady && !terminate) {
                 int clickedSlot = chosenSlots.remove();
                 if (table.slotToCard[clickedSlot] != null)
                     dealer.toggleToken(id, clickedSlot);
@@ -133,18 +133,14 @@ public class Player implements Runnable {
                 if (!env.util.testSet(clicked)) {
                     try {
                         Thread.sleep(env.config.penaltyFreezeMillis);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+                    } catch (InterruptedException ignored) {}
                     for (int i = 0; i < env.config.featureSize; i++) {
                         keyPressed(slots.get(i));
                     }
                 } else {
                     try {
                         Thread.sleep(env.config.pointFreezeMillis);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+                    } catch (InterruptedException ignored) {}
                 }
             }
             System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
@@ -155,13 +151,9 @@ public class Player implements Runnable {
     /**
      * Called when the game should be terminated due to an external event.
      */
-    public void terminate() {
+    public synchronized void terminate() {
+        notifyAll();
         terminate = true;
-        try {
-            if (!human) aiThread.join();
-        } catch (InterruptedException ignored) {
-            System.out.println(ignored);
-        }
     }
 
     /**

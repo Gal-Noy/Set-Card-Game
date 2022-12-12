@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -52,7 +53,7 @@ public class Dealer implements Runnable {
     /**
      * For each player, hold current pressed slots
      */
-    private ConcurrentHashMap<Integer, ConcurrentSkipListSet<Integer>> playersTokens;
+    private final ConcurrentHashMap<Integer, ConcurrentSkipListSet<Integer>> playersTokens;
     /**
      * Queue for every player with a possible set, in order of choosing
      */
@@ -99,7 +100,13 @@ public class Dealer implements Runnable {
             updateTimerDisplay(false);
             removeAllCardsFromTable();
         }
+        if (!terminate) terminate();
+
+        for (int i = players.length-1; i >= 0; i--)
+            try {players[i].getThread().join();} catch (InterruptedException ignored) {}
+
         announceWinners();
+
         System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
     }
 
@@ -121,9 +128,8 @@ public class Dealer implements Runnable {
      * Called when the game should be terminated due to an external event.
      */
     public void terminate() {
-        for (Player player : players) {
+        for (Player player : players)
             player.terminate();
-        }
         terminate = true;
     }
 
@@ -170,7 +176,7 @@ public class Dealer implements Runnable {
 
         if (tableFilled && !shouldFinish()) {
             updateTimerDisplay(true);
-            table.hints();
+//            table.hints();
         }
     }
 
@@ -230,7 +236,7 @@ public class Dealer implements Runnable {
                     player.setFreezeTime(-1);
             }
             long delta = reshuffleTime - currentMillis;
-            env.ui.setCountdown(delta + SECOND/2, env.config.turnTimeoutWarningMillis >= delta + SECOND/2);
+            env.ui.setCountdown(delta, env.config.turnTimeoutWarningMillis >= delta);
 
         } else if (gameMode == Mode.Elapsed) {
             if (reset)
@@ -238,7 +244,7 @@ public class Dealer implements Runnable {
             env.ui.setElapsed(currentMillis - elapsedTime);
         }
         for (Player player : players)
-            env.ui.setFreeze(player.getId(), player.getFreezeTime() - currentMillis + SECOND/2);
+            env.ui.setFreeze(player.getId(), player.getFreezeTime() - currentMillis);
     }
 
     /**
