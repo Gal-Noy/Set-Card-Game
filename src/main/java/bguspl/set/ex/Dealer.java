@@ -152,11 +152,8 @@ public class Dealer implements Runnable {
             table.placeCard(availableCards.get(card), slot);
             availableCards.remove(card);
         }
-        if (!availableSlots.isEmpty() && !shouldFinish()) {
+        if (!availableSlots.isEmpty() && !shouldFinish())
             updateTimerDisplay(true);
-            table.hints();
-        }
-
     }
 
     private List<Integer> getAvailableSlots() {
@@ -183,10 +180,7 @@ public class Dealer implements Runnable {
     private void sleepUntilWokenOrTimeout() {
         try {
             Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            System.out.println("Morning sunshine");
-            ;
-        }
+        } catch (InterruptedException ignored) {}
     }
 
     /**
@@ -265,10 +259,7 @@ public class Dealer implements Runnable {
             int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
 
             // common tokens with previously removed set
-            if (cardsToExamine.length != env.config.featureSize) {
-                System.out.println("TOO LATE");
-                continue;
-            }
+            if (cardsToExamine.length != env.config.featureSize) continue;
 
             boolean isLegalSet = env.util.testSet(cardsToExamine);
             Player player = players[nextPlayer];
