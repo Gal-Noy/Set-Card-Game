@@ -187,6 +187,8 @@ public class Dealer implements Runnable {
      * Reset and/or update the countdown and the countdown display.
      */
     private void updateTimerDisplay(boolean reset) {
+        table.tableReady = false;
+
         if (reset) {
             reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis;
             for (Player player : players)

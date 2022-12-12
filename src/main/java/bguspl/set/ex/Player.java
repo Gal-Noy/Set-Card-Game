@@ -95,13 +95,8 @@ public class Player implements Runnable {
 
         while (!terminate) {
             synchronized (this) {
-                while (chosenSlots.isEmpty()) {
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
-                        System.out.println("Player run wait");
-                    }
-                }
+                while (chosenSlots.isEmpty())
+                    try {wait();} catch (InterruptedException ignored) {}
             }
             if (table.tableReady) {
                 int clickedSlot = chosenSlots.remove();
