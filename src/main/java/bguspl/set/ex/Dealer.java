@@ -9,6 +9,12 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+enum Mode {
+    Timer,
+    FreePlay,
+    Elapsed
+}
+
 /**
  * This class manages the dealer's threads and data
  */
@@ -41,6 +47,8 @@ public class Dealer implements Runnable {
      * The time when the dealer needs to reshuffle the deck due to turn timeout.
      */
     private long reshuffleTime = Long.MAX_VALUE;
+
+    private long elapsedTime = System.currentTimeMillis();
     /**
      * For each player, hold current pressed slots
      */
@@ -51,6 +59,10 @@ public class Dealer implements Runnable {
     private final ConcurrentLinkedQueue<Integer> setsToCheckByPlayer;
 
     private final ConcurrentLinkedQueue<int[]> setsToRemove;
+
+    private final Mode gameMode;
+
+    private final long SECOND = 1000;
 
 
     public Dealer(Env env, Table table, Player[] players) {
@@ -64,6 +76,8 @@ public class Dealer implements Runnable {
             playersTokens.put(i, new ConcurrentSkipListSet<>());
         this.setsToCheckByPlayer = new ConcurrentLinkedQueue<>();
         this.setsToRemove = new ConcurrentLinkedQueue<>();
+        this.gameMode = env.config.turnTimeoutMillis > 0 ? Mode.Timer :
+                env.config.turnTimeoutMillis < 0 ? Mode.FreePlay : Mode.Elapsed;
     }
 
     /**
@@ -143,6 +157,24 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         table.tableReady = false;
 
+        boolean tableFilled = shuffleAndDeal();
+
+        if (gameMode != Mode.Timer) {
+            List<Integer> cardsOnTable = new ArrayList<>();
+            for (Integer card : table.slotToCard)
+                if (card != null)
+                    cardsOnTable.add(card);
+            boolean setsAvailable = env.util.findSets(cardsOnTable, 1).size() > 0;
+            reshuffleTime = !setsAvailable ? System.currentTimeMillis() : Long.MAX_VALUE;
+        }
+
+        if (tableFilled && !shouldFinish()) {
+            updateTimerDisplay(true);
+            table.hints();
+        }
+    }
+
+    private boolean shuffleAndDeal() {
         List<Integer> availableSlots = getAvailableSlots();
         List<Integer> availableCards = getAvailableCards();
         for (int i = 0; i < availableSlots.size() && !availableCards.isEmpty(); i++) {
@@ -152,10 +184,7 @@ public class Dealer implements Runnable {
             table.placeCard(availableCards.get(card), slot);
             availableCards.remove(card);
         }
-        if (!availableSlots.isEmpty() && !shouldFinish()) {
-            updateTimerDisplay(true);
-            table.hints();
-        }
+        return !availableSlots.isEmpty();
     }
 
     private List<Integer> getAvailableSlots() {
@@ -181,8 +210,9 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {
         try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ignored) {}
+            Thread.sleep(SECOND);
+        } catch (InterruptedException ignored) {
+        }
     }
 
     /**
@@ -191,16 +221,24 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         table.tableReady = false;
 
-        if (reset) {
-            reshuffleTime = System.currentTimeMillis() + env.config.turnTimeoutMillis;
-            for (Player player : players)
-                player.setFreezeTime(-1);
-        } else {
-            long delta = reshuffleTime - System.currentTimeMillis();
-            env.ui.setCountdown(delta, env.config.turnTimeoutWarningMillis >= delta);
+        long currentMillis = System.currentTimeMillis();
+
+        if (gameMode == Mode.Timer) {
+            if (reset) {
+                reshuffleTime = currentMillis + env.config.turnTimeoutMillis;
+                for (Player player : players)
+                    player.setFreezeTime(-1);
+            }
+            long delta = reshuffleTime - currentMillis;
+            env.ui.setCountdown(delta + SECOND/2, env.config.turnTimeoutWarningMillis >= delta + SECOND/2);
+
+        } else if (gameMode == Mode.Elapsed) {
+            if (reset)
+                elapsedTime = currentMillis;
+            env.ui.setElapsed(currentMillis - elapsedTime);
         }
         for (Player player : players)
-            env.ui.setFreeze(player.getId(), player.getFreezeTime() - System.currentTimeMillis());
+            env.ui.setFreeze(player.getId(), player.getFreezeTime() - currentMillis + SECOND/2);
     }
 
     /**
