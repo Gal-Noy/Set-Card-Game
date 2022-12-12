@@ -138,4 +138,8 @@ public class Table {
         env.ui.removeToken(player, slot);
         return true;
     }
+
+    public Integer[] getSlotToCard(){
+        return slotToCard;
+    }
 }

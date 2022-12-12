@@ -25,6 +25,7 @@ public class Player implements Runnable {
      * Game entities.
      */
     private final Table table;
+
     /**
      * Game dealer.
      */
@@ -59,11 +60,15 @@ public class Player implements Runnable {
      * The current score of the player.
      */
     private int score;
+
     /**
      * Player's chosen slots.
      */
     private final ConcurrentLinkedQueue<Integer> chosenSlots;
 
+    /**
+     * The time when the player freeze will time out.
+     */
     private volatile long freezeTime = -1;
 
     /**
@@ -94,10 +99,13 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
+
             synchronized (this) {
                 while (chosenSlots.isEmpty() && !terminate)
                     try {wait();} catch (InterruptedException ignored) {}
             }
+
+            // Allow actions iff game is running and table is available
             if (table.tableReady && !terminate) {
                 int clickedSlot = chosenSlots.remove();
                 if (table.slotToCard[clickedSlot] != null)
@@ -133,14 +141,16 @@ public class Player implements Runnable {
                 if (!env.util.testSet(clicked)) {
                     try {
                         Thread.sleep(env.config.penaltyFreezeMillis);
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                    }
                     for (int i = 0; i < env.config.featureSize; i++) {
                         keyPressed(slots.get(i));
                     }
                 } else {
                     try {
                         Thread.sleep(env.config.pointFreezeMillis);
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
             System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
@@ -211,4 +221,8 @@ public class Player implements Runnable {
     public long getFreezeTime() {
         return freezeTime;
     }
+}
+
+class AtomicTable {
+
 }

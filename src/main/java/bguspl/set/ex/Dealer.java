@@ -123,6 +123,7 @@ public class Dealer implements Runnable {
         while (!terminate && System.currentTimeMillis() < reshuffleTime) {
             sleepUntilWokenOrTimeout();
             examineSets(); // Main logic
+            table.tableReady = false;
             updateTimerDisplay(false);
             removeCardsFromTable();
             placeCardsOnTable();
@@ -331,6 +332,7 @@ public class Dealer implements Runnable {
             } else
                 player.penalty();
         }
+        table.tableReady = false;
     }
 
     private void removeWinningTokens(int[] winningSlots) {
