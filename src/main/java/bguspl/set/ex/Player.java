@@ -71,6 +71,8 @@ public class Player implements Runnable {
      */
     private volatile long freezeTime = -1;
 
+    protected volatile boolean examined = false;
+
     /**
      * The class constructor.
      *
@@ -100,16 +102,18 @@ public class Player implements Runnable {
 
         while (!terminate) {
 
+            // Sleep until woken by input manager thread or game termination.
             synchronized (this) {
                 while (chosenSlots.isEmpty() && !terminate)
                     try {wait();} catch (InterruptedException ignored) {}
             }
 
-            // Allow actions iff game is running and table is available
+            // Allow actions iff game is running and table is available.
             if (table.tableReady && !terminate) {
                 int clickedSlot = chosenSlots.remove();
                 try{
                     table.slotLocks[clickedSlot].readLock().lock();
+
                     if (table.slotToCard[clickedSlot] != null)
                         dealer.toggleToken(id, clickedSlot);
                 }
@@ -137,8 +141,26 @@ public class Player implements Runnable {
                 List<Integer> slots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().collect(Collectors.toList());
                 Collections.shuffle(slots);
 
-                for (int i = 0; i < env.config.featureSize; i++)
-                    keyPressed(slots.get(i));
+                int[] clicked = new int[env.config.featureSize];
+                for (int i = 0; i < env.config.featureSize; i++) {
+                    int slot = slots.get(i);
+                    keyPressed(slot);
+                    clicked[i] = slot;
+                }
+
+                if (!env.util.testSet(clicked)) {
+                    try {
+                        Thread.sleep(env.config.penaltyFreezeMillis);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    try {
+                        Thread.sleep(env.config.pointFreezeMillis);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
             System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
         }, "computer-" + id);
@@ -159,7 +181,7 @@ public class Player implements Runnable {
      * @param slot - the slot corresponding to the key pressed.
      */
     public synchronized void keyPressed(int slot) {
-        if (table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
+        if (!examined && table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
             chosenSlots.add(slot);
             notifyAll();
         }
@@ -171,18 +193,21 @@ public class Player implements Runnable {
      * @post - the player's score is increased by 1.
      * @post - the player's score is updated in the ui.
      */
-    public void point() {
+    public synchronized void point() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.pointFreezeMillis);
-
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
+        examined = false;
+        notifyAll();
     }
 
     /**
      * Penalize a player and perform other related actions.
      */
-    public void penalty() {
+    public synchronized void penalty() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.penaltyFreezeMillis);
+        examined = false;
+        notifyAll();
     }
 
     public int getScore() {

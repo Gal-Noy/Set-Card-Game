@@ -5,8 +5,6 @@ import bguspl.set.Env;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -33,9 +31,16 @@ public class Table {
      */
     protected final Integer[] cardToSlot; // slot per card (if any)
 
+    /**
+     * Signifies when players are allowed to place tokens on the table.
+     */
     protected volatile boolean tableReady;
 
+    /**
+     * ReadWrite lock for each slot of the table.
+     */
     protected ReadWriteLock[] slotLocks;
+
     /**
      * Constructor for testing.
      *
@@ -103,11 +108,12 @@ public class Table {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {}
 
+        // Display changes on ui
+        env.ui.placeCard(card, slot);
+
         cardToSlot[card] = slot;
         slotToCard[slot] = card;
 
-        // Display changes on ui
-        env.ui.placeCard(card, slot);
     }
 
     /**
@@ -119,13 +125,14 @@ public class Table {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {}
 
+        // Display changes on ui
+        env.ui.removeTokens(slot);
+        env.ui.removeCard(slot);
+
         int cardIdx = slotToCard[slot];
         slotToCard[slot] = null;
         cardToSlot[cardIdx] = null;
 
-        // Display changes on ui
-        env.ui.removeCard(slot);
-        env.ui.removeTokens(slot);
     }
 
     /**
@@ -148,7 +155,12 @@ public class Table {
         return true;
     }
 
+    /**
+     * Removes all tokens from the grid slots.
+     */
     public void removeAllTokens(){
         env.ui.removeTokens();
     }
+
+
 }

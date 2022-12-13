@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -65,6 +67,8 @@ public class Dealer implements Runnable {
 
     private final long SECOND = 1000;
 
+    private final ReadWriteLock deckLock;
+
 
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
@@ -79,6 +83,7 @@ public class Dealer implements Runnable {
         this.setsToRemove = new ConcurrentLinkedQueue<>();
         this.gameMode = env.config.turnTimeoutMillis > 0 ? Mode.Timer :
                 env.config.turnTimeoutMillis < 0 ? Mode.FreePlay : Mode.Elapsed;
+        this.deckLock = new ReentrantReadWriteLock();
     }
 
     /**
@@ -154,7 +159,15 @@ public class Dealer implements Runnable {
      * @return true iff the game should be finished.
      */
     private boolean shouldFinish() {
-        return terminate || env.util.findSets(deck, 1).size() == 0;
+        if (terminate) return true;
+        boolean setsLeft;
+        try{
+            deckLock.readLock().lock();
+            setsLeft = env.util.findSets(deck, 1).size() == 0;
+        } finally {
+            deckLock.readLock().unlock();
+        }
+        return setsLeft;
     }
 
     /**
@@ -168,13 +181,17 @@ public class Dealer implements Runnable {
             for (int slot : setToRemove) {
                 try{
                     table.slotLocks[slot].writeLock().lock();
+                    deckLock.writeLock().lock();
+
                     deck.remove(table.slotToCard[slot]);
                     table.removeCard(slot);
                 }
                 finally {
+                    deckLock.writeLock().unlock();
                     table.slotLocks[slot].writeLock().unlock();
                 }
             }
+
         }
     }
 
@@ -203,6 +220,7 @@ public class Dealer implements Runnable {
         try{
             for (int i = 0; i < table.slotToCard.length; i++)
                 table.slotLocks[i].writeLock().lock();
+            deckLock.writeLock().lock();
 
             List<Integer> availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).collect(Collectors.toList());
             for (int i = 0; i < availableSlots.size() && !deck.isEmpty(); i++) {
@@ -215,6 +233,7 @@ public class Dealer implements Runnable {
             tableFilled = !availableSlots.isEmpty();
         }
         finally {
+            deckLock.writeLock().unlock();
             for (int i = table.slotToCard.length - 1; i >= 0; i--)
                 table.slotLocks[i].writeLock().unlock();
         }
@@ -299,8 +318,12 @@ public class Dealer implements Runnable {
      */
     private void announceWinners() {
         int maxScore = 0;
-        for (Player player : players)
+        int sum = 0;
+        for (Player player : players) {
             maxScore = Math.max(maxScore, player.getScore());
+            sum += player.getScore();
+        }
+        System.out.println("scores " + sum);
         int finalMaxScore = maxScore;
         List<Integer> winnersIds = Arrays.stream(players).filter(player -> player.getScore() == finalMaxScore).map(Player::getId).collect(Collectors.toList());
         env.ui.announceWinner(winnersIds.stream().mapToInt(i -> i).toArray());
@@ -312,19 +335,21 @@ public class Dealer implements Runnable {
             List<Integer> possibleSet = new ArrayList<>(playersTokens.get(nextPlayer));
 
             try{
-                for (int i = 0; i < possibleSet.size(); i++)
-                    table.slotLocks[possibleSet.get(i)].readLock().lock();
+                for (Integer slot : possibleSet) table.slotLocks[slot].readLock().lock();
 
                 // Check the set for legality
                 int[] slotsToExamine = possibleSet.stream().mapToInt(Integer::intValue).toArray();
                 int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
 
-                // common tokens with previously removed set
-                if (cardsToExamine.length != env.config.featureSize) continue;
-
-                boolean isLegalSet = env.util.testSet(cardsToExamine);
                 Player player = players[nextPlayer];
 
+                // common tokens with previously removed set
+                if (cardsToExamine.length != env.config.featureSize) {
+                    player.examined = false;
+                    continue;
+                }
+
+                boolean isLegalSet = env.util.testSet(cardsToExamine);
 
                 if (isLegalSet) { // if legal, remove tokens from relevant sets
                     setsToRemove.add(slotsToExamine);
@@ -345,7 +370,8 @@ public class Dealer implements Runnable {
         table.tableReady = false;
         for (Integer playerId : playersTokens.keySet()) {
             for (int slot : winningSlots)
-                playersTokens.get(playerId).remove(slot);
+                if (playersTokens.get(playerId).remove(slot))
+                    players[playerId].examined = false;
         }
     }
 
@@ -362,6 +388,7 @@ public class Dealer implements Runnable {
                 // Updated to three
                 if (playerSet.size() == env.config.featureSize) {
                     setsToCheckByPlayer.add(playerId);
+                    players[playerId].examined = true;
                     dealerThread.interrupt(); // Wakes the dealer
                 }
             }
