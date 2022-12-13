@@ -181,10 +181,7 @@ public class Dealer implements Runnable {
         boolean tableFilled = shuffleAndDeal();
 
         if (gameMode != Mode.Timer) {
-            List<Integer> cardsOnTable = new ArrayList<>();
-            for (Integer card : table.slotToCard)
-                if (card != null)
-                    cardsOnTable.add(card);
+            List<Integer> cardsOnTable = Arrays.stream(table.slotToCard).filter(Objects::nonNull).collect(Collectors.toList());
             boolean setsAvailable = env.util.findSets(cardsOnTable, 1).size() > 0;
             reshuffleTime = !setsAvailable ? System.currentTimeMillis() : Long.MAX_VALUE;
         }
@@ -258,20 +255,11 @@ public class Dealer implements Runnable {
 
         removeAllTokens();
 
-        List<Integer> occupiedSlots = getOccupiedSlots();
+        List<Integer> occupiedSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] != null).collect(Collectors.toList());
         for (int slot : occupiedSlots) {
             table.cardToSlot[table.slotToCard[slot]] = null;
             table.removeCard(slot);
         }
-    }
-
-    private List<Integer> getOccupiedSlots() {
-        List<Integer> output = new ArrayList<>();
-        for (int i = 0; i < table.slotToCard.length; i++) {
-            if (table.slotToCard[i] != null)
-                output.add(i);
-        }
-        return output;
     }
 
     // Iterate each player's tokens set, remove tokens from set and from table
@@ -288,10 +276,8 @@ public class Dealer implements Runnable {
         int maxScore = 0;
         for (Player player : players)
             maxScore = Math.max(maxScore, player.getScore());
-        List<Integer> winnersIds = new ArrayList<>();
-        for (Player player : players)
-            if (player.getScore() == maxScore)
-                winnersIds.add(player.getId());
+        int finalMaxScore = maxScore;
+        List<Integer> winnersIds = Arrays.stream(players).filter(player -> player.getScore() == finalMaxScore).map(Player::getId).collect(Collectors.toList());
         env.ui.announceWinner(winnersIds.stream().mapToInt(i -> i).toArray());
     }
 
