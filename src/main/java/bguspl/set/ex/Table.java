@@ -120,7 +120,7 @@ public class Table {
      * Removes a card from a grid slot on the table.
      * @param slot - the slot from which to remove the card.
      */
-    public void removeCard(int slot) {
+    public void removeCard(int slot, boolean removeFromDeck) {
         try {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {}
@@ -131,7 +131,7 @@ public class Table {
 
         int cardIdx = slotToCard[slot];
         slotToCard[slot] = null;
-        cardToSlot[cardIdx] = null;
+        cardToSlot[cardIdx] = removeFromDeck ? -1 : null;
 
     }
 

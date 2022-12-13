@@ -95,11 +95,6 @@ public class Dealer implements Runnable {
     private final long SECOND = 1000;
 
     /**
-     * Deck's ReadWriteLock.
-     */
-    private final ReadWriteLock deckLock;
-
-    /**
      * The class constructor.
      *
      * @param env     - the environment object.
@@ -123,8 +118,6 @@ public class Dealer implements Runnable {
 
         this.gameMode = env.config.turnTimeoutMillis > 0 ? Mode.Timer :
                 env.config.turnTimeoutMillis < 0 ? Mode.FreePlay : Mode.Elapsed;
-
-        this.deckLock = new ReentrantReadWriteLock();
 
         if (gameMode == Mode.Elapsed) this.elapsedTime = System.currentTimeMillis();
     }
@@ -208,14 +201,8 @@ public class Dealer implements Runnable {
 
         if (terminate) return true;
 
-        boolean setsLeft;
-        try {
-            deckLock.readLock().lock();
-            setsLeft = env.util.findSets(deck, 1).size() == 0;
-        } finally {
-            deckLock.readLock().unlock();
-        }
-        return setsLeft;
+        return env.util.findSets(deck, 1).size() == 0;
+
     }
 
     /**
@@ -231,16 +218,14 @@ public class Dealer implements Runnable {
             try {
                 // Lock locks.
                 table.lockSlots(setToRemove, true);
-                deckLock.writeLock().lock();
 
                 for (int slot : setToRemove) {
                     deck.remove(table.slotToCard[slot]);
-                    table.removeCard(slot);
+                    table.removeCard(slot, true);
                 }
 
             } finally {
                 // Unlock locks.
-                deckLock.writeLock().unlock();
                 table.unlockSlots(setToRemove, true);
             }
         }
@@ -284,30 +269,26 @@ public class Dealer implements Runnable {
 
         boolean tableChanged;
 
-        try {
-            // Lock locks.
-            table.lockAllSlots(true);
-            deckLock.writeLock().lock();
-
-            // Randomly placing cards from deck on available slots on table.
-            List<Integer> availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).collect(Collectors.toList());
-            for (int i = 0; i < availableSlots.size() && !deck.isEmpty(); i++) {
-                int slot = availableSlots.get(i);
-                int card = (int) (Math.random() * deck.size());
-                table.slotToCard[slot] = card;
-                table.placeCard(deck.get(card), slot);
-                deck.remove(card);
-            }
-
-            tableChanged = !availableSlots.isEmpty();
-
-        } finally {
-            // Unlock locks.
-            deckLock.writeLock().unlock();
-            table.unlockAllSlots(true);
+        // Randomly placing cards from deck on available slots on table.
+        List<Integer> availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).collect(Collectors.toList());
+        List<Integer> availableCards = getAvailableCards();
+        for (int i = 0; i < availableSlots.size() && !availableCards.isEmpty(); i++) {
+            int slot = availableSlots.get(i);
+            int card = (int) (Math.random() * availableCards.size());
+            table.slotToCard[slot] = card;
+            table.placeCard(availableCards.get(card), slot);
+            availableCards.remove(card);
         }
+        return !availableSlots.isEmpty();
+    }
 
-        return tableChanged;
+    private List<Integer> getAvailableCards() {
+        List<Integer> output = new ArrayList<>();
+        for (int i = 0; i < table.cardToSlot.length; i++) {
+            if (table.cardToSlot[i] == null)
+                output.add(i);
+        }
+        return output;
     }
 
     /**
@@ -402,7 +383,7 @@ public class Dealer implements Runnable {
 
             for (int slot : filledSlots) {
                 table.cardToSlot[table.slotToCard[slot]] = null;
-                table.removeCard(slot);
+                table.removeCard(slot, false);
             }
         } finally {
             // Unlock locks.
@@ -428,8 +409,12 @@ public class Dealer implements Runnable {
     private void announceWinners() {
         // Get max score.
         int maxScore = 0;
-        for (Player player : players)
+        int score = 0;
+        for (Player player : players) {
             maxScore = Math.max(maxScore, player.getScore());
+            score += player.getScore();
+        }
+        System.out.println(score);
         int finalMaxScore = maxScore;
 
         // Get winners and display them.
@@ -461,10 +446,7 @@ public class Dealer implements Runnable {
 
 
                 // Check if any tokens were removed from the set while another set was being examined.
-                if (cardsToExamine.length != env.config.featureSize) {
-                    player.examined = false;
-                    continue;
-                }
+                if (cardsToExamine.length != env.config.featureSize) continue;
 
                 // Check if the set is legal.
                 boolean isLegalSet = env.util.testSet(cardsToExamine);
@@ -491,15 +473,13 @@ public class Dealer implements Runnable {
      *
      * @param winningSlots - the slots of the legal set.
      * @post - each set in playersTokens contains only tokens that are not in winningSlots.
-     * @post - if any token was removed from player's set, its examined field is set to false.
      */
     private void removeWinningTokens(int[] winningSlots) {
         table.tableReady = false;
 
         for (Integer playerId : playersTokens.keySet())
             for (int slot : winningSlots)
-                if (playersTokens.get(playerId).remove(slot))
-                    players[playerId].examined = false;
+                playersTokens.get(playerId).remove(slot);
     }
 
     /**
@@ -523,8 +503,6 @@ public class Dealer implements Runnable {
                 if (playerSet.size() == env.config.featureSize) {
                     // Add player to setsToCheckByPlayer.
                     setsToCheckByPlayer.add(playerId);
-
-                    players[playerId].examined = true;
 
                     // Wakes the dealer thread to check the set.
                     dealerThread.interrupt();

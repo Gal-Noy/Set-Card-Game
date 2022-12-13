@@ -95,17 +95,6 @@ class PlayerTest {
     }
 
     @Test
-    void keyPress_ExamineShouldFail() {
-        player.examined = true;
-        int chosenSlotsSize = player.chosenSlots.size();
-
-        player.keyPressed(0);
-
-        assertEquals(player.chosenSlots.size(), chosenSlotsSize);
-        assertFalse(player.chosenSlots.contains(0));
-    }
-
-    @Test
     void keyPress_TableReadyShouldFail(){
         table.tableReady = false;
         int chosenSlotsSize = player.chosenSlots.size();

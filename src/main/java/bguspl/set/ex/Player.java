@@ -75,11 +75,6 @@ public class Player implements Runnable {
     private volatile long freezeTime = -1;
 
     /**
-     * Signifies that a player chosen set is being examined.
-     */
-    protected volatile boolean examined = false;
-
-    /**
      * The class constructor.
      *
      * @param env    - the environment object.
@@ -183,7 +178,7 @@ public class Player implements Runnable {
     public synchronized void keyPressed(int slot) {
 
         // Allow key presses iff all conditions are met.
-        if (!examined && table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
+        if (table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
             chosenSlots.add(slot);
             notifyAll();
         }
@@ -195,11 +190,9 @@ public class Player implements Runnable {
      * @post - the player's score is increased by 1.
      * @post - the player's score is updated in the ui.
      * @post - the player's freeze time is set to the current time plus the point freeze time.
-     * @post - the player's examined is set to false.
      */
     public synchronized void point() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.pointFreezeMillis);
-        examined = false;
         notifyAll();
 
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
@@ -210,11 +203,9 @@ public class Player implements Runnable {
      * Penalize a player and perform other related actions.
      *
      * @post - the player's freeze time is set to the current time plus the penalty freeze time.
-     * @post - the player's examined is set to false.
      */
     public synchronized void penalty() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.penaltyFreezeMillis);
-        examined = false;
         notifyAll();
     }
 
