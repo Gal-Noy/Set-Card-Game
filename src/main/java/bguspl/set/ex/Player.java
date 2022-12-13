@@ -5,6 +5,7 @@ import bguspl.set.Env;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -13,6 +14,8 @@ import java.util.stream.IntStream;
  *
  * @inv id >= 0
  * @inv score >= 0
+ * @inv freezeTime >= -1
+ * @inv 0 <= chosenSlots.size() <= env.config.featureSize
  */
 public class Player implements Runnable {
 
@@ -71,6 +74,9 @@ public class Player implements Runnable {
      */
     private volatile long freezeTime = -1;
 
+    /**
+     * Signifies that a player chosen set is being examined.
+     */
     protected volatile boolean examined = false;
 
     /**
@@ -97,7 +103,7 @@ public class Player implements Runnable {
     @Override
     public void run() {
         playerThread = Thread.currentThread();
-        System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
+        env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + "starting.");
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
@@ -105,20 +111,22 @@ public class Player implements Runnable {
             // Sleep until woken by input manager thread or game termination.
             synchronized (this) {
                 while (chosenSlots.isEmpty() && !terminate)
-                    try {wait();} catch (InterruptedException ignored) {}
+                    try {
+                        wait();
+                    } catch (InterruptedException ignored) {
+                    }
             }
 
             // Allow actions iff game is running and table is available.
             if (table.tableReady && !terminate) {
                 int clickedSlot = chosenSlots.remove();
-                try{
-                    table.slotLocks[clickedSlot].readLock().lock();
+                try {
+                    table.lockSlot(clickedSlot, false);
 
                     if (table.slotToCard[clickedSlot] != null)
-                        dealer.toggleToken(id, clickedSlot);
-                }
-                finally {
-                    table.slotLocks[clickedSlot].readLock().unlock();
+                        dealer.toggleToken(id, clickedSlot); // Toggle token on slot.
+                } finally {
+                    table.unlockSlot(clickedSlot, false);
                 }
             }
         }
@@ -126,7 +134,7 @@ public class Player implements Runnable {
             aiThread.join();
         } catch (InterruptedException ignored) {
         }
-        System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
+        env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " terminated.");
     }
 
     /**
@@ -134,35 +142,21 @@ public class Player implements Runnable {
      * key presses. If the queue of key presses is full, the thread waits until it is not full.
      */
     private void createArtificialIntelligence() {
-        // note: this is a very very smart AI (!)
+        // note: this is a very, very smart AI (!)
         aiThread = new Thread(() -> {
-            System.out.printf("Info: Thread %s starting.%n", Thread.currentThread().getName());
+            env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
+
+                // Pick random slots from the table.
                 List<Integer> slots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().collect(Collectors.toList());
                 Collections.shuffle(slots);
 
-                int[] clicked = new int[env.config.featureSize];
-                for (int i = 0; i < env.config.featureSize; i++) {
-                    int slot = slots.get(i);
-                    keyPressed(slot);
-                    clicked[i] = slot;
-                }
+                // Add to queue of actions.
+                for (int i = 0; i < env.config.featureSize; i++)
+                    keyPressed(slots.get(i));
 
-                if (!env.util.testSet(clicked)) {
-                    try {
-                        Thread.sleep(env.config.penaltyFreezeMillis);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
-                    try {
-                        Thread.sleep(env.config.pointFreezeMillis);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
             }
-            System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
+            env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " terminated.");
         }, "computer-" + id);
         aiThread.start();
     }
@@ -179,8 +173,12 @@ public class Player implements Runnable {
      * This method is called when a key is pressed.
      *
      * @param slot - the slot corresponding to the key pressed.
+     * @pre - none.
+     * @post - the key press is added to the queue of key presses.
      */
     public synchronized void keyPressed(int slot) {
+
+        // Allow key presses iff all conditions are met.
         if (!examined && table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
             chosenSlots.add(slot);
             notifyAll();
@@ -192,17 +190,23 @@ public class Player implements Runnable {
      *
      * @post - the player's score is increased by 1.
      * @post - the player's score is updated in the ui.
+     * @post - the player's freeze time is set to the current time plus the point freeze time.
+     * @post - the player's examined is set to false.
      */
     public synchronized void point() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.pointFreezeMillis);
-        int ignored = table.countCards(); // this part is just for demonstration in the unit tests
-        env.ui.setScore(id, ++score);
         examined = false;
         notifyAll();
+
+        int ignored = table.countCards(); // this part is just for demonstration in the unit tests
+        env.ui.setScore(id, ++score);
     }
 
     /**
      * Penalize a player and perform other related actions.
+     *
+     * @post - the player's freeze time is set to the current time plus the penalty freeze time.
+     * @post - the player's examined is set to false.
      */
     public synchronized void penalty() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.penaltyFreezeMillis);
@@ -210,26 +214,45 @@ public class Player implements Runnable {
         notifyAll();
     }
 
+    /**
+     * Returns the player's score.
+     */
     public int getScore() {
         return score;
     }
 
+    /**
+     * Sets the player's thread.
+     */
     public void setThread(Thread pThread) {
         playerThread = pThread;
     }
 
+    /**
+     * Returns the player's thread.
+     */
     public Thread getThread() {
         return playerThread;
     }
 
+    /**
+     * Returns the player's id.
+     */
     public int getId() {
         return id;
     }
 
+    /**
+     * @pre - none.
+     * @post - freezeTime is set to time.
+     */
     public void setFreezeTime(long time) {
         freezeTime = time;
     }
 
+    /**
+     * Returns the player's freezeTime.
+     */
     public long getFreezeTime() {
         return freezeTime;
     }

@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
  * This class contains the data that is visible to the player.
  *
  * @inv slotToCard[x] == y iff cardToSlot[y] == x
+ * @inv slotLocks.size() == env.config.tableSize
  */
 public class Table {
 
@@ -34,7 +35,7 @@ public class Table {
     /**
      * Signifies when players are allowed to place tokens on the table.
      */
-    protected volatile boolean tableReady;
+    protected volatile boolean tableReady = false;
 
     /**
      * ReadWrite lock for each slot of the table.
@@ -53,7 +54,6 @@ public class Table {
         this.env = env;
         this.slotToCard = slotToCard;
         this.cardToSlot = cardToSlot;
-        this.tableReady = false;
 
         this.slotLocks = new ReadWriteLock[slotToCard.length];
         for (int i = 0; i < slotLocks.length; i++)
@@ -160,6 +160,40 @@ public class Table {
      */
     public void removeAllTokens(){
         env.ui.removeTokens();
+    }
+
+    public void lockSlot(int slot, boolean write){
+        if(write)
+            slotLocks[slot].writeLock().lock();
+        else
+            slotLocks[slot].readLock().lock();
+    }
+
+    public void unlockSlot(int slot, boolean write){
+        if(write)
+            slotLocks[slot].writeLock().unlock();
+        else
+            slotLocks[slot].readLock().unlock();
+    }
+
+    public void lockSlots(Integer[] slots, boolean write){
+        for (Integer slot : slots)
+            lockSlot(slot, write);
+    }
+
+    public void unlockSlots(Integer[] slots, boolean write){
+        for (int i = slots.length-1; i >= 0; i--)
+            unlockSlot(slots[i], write);
+    }
+
+    public void lockAllSlots(boolean write){
+        for (int i = 0; i < slotLocks.length; i++)
+            lockSlot(i, write);
+    }
+
+    public void unlockAllSlots(boolean write){
+        for (int i = slotLocks.length-1; i >= 0; i--)
+            unlockSlot(i, write);
     }
 
 
