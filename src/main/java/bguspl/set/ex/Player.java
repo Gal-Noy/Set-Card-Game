@@ -47,12 +47,12 @@ public class Player implements Runnable {
     /**
      * The thread of the AI (computer) player (an additional thread used to generate key presses).
      */
-    private Thread aiThread;
+    protected Thread aiThread;
 
     /**
      * True iff the player is human (not a computer player).
      */
-    private final boolean human;
+    protected final boolean human;
 
     /**
      * True iff game should be terminated due to an external event.
@@ -146,14 +146,15 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
+//                while (!table.tableReady && !terminate)
+//                    try {
+//                        Thread.sleep(Long.MAX_VALUE);
+//                    } catch (InterruptedException ignored) {
+//                    }
 
-                // Pick random slots from the table.
-                List<Integer> slots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().collect(Collectors.toList());
-                Collections.shuffle(slots);
+                // Pick random slot from the table.
+                keyPressed((int) (Math.random() * env.config.tableSize));
 
-                // Add to queue of actions.
-                for (int i = 0; i < env.config.featureSize; i++)
-                    keyPressed(slots.get(i));
 
             }
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " terminated.");
@@ -163,6 +164,7 @@ public class Player implements Runnable {
 
     /**
      * Called when the game should be terminated due to an external event.
+     *
      * @pre - terminate == false
      * @post - terminate == true
      */

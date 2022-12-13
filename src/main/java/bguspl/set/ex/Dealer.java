@@ -271,6 +271,8 @@ public class Dealer implements Runnable {
         }
 
         table.tableReady = true;
+//        for (Player player : players)
+//            if (!player.human) player.aiThread.interrupt();
     }
 
     /**
