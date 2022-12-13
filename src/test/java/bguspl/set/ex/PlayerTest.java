@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Properties;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,6 +33,8 @@ class PlayerTest {
     private Dealer dealer;
     @Mock
     private Logger logger;
+    @Mock
+    private Config config;
 
     void assertInvariants() {
         assertTrue(player.id >= 0);
@@ -40,8 +43,21 @@ class PlayerTest {
 
     @BeforeEach
     void setUp() {
+        Properties properties = new Properties();
+        properties.put("Rows", "2");
+        properties.put("Columns", "2");
+        properties.put("FeatureSize", "3");
+        properties.put("FeatureCount", "4");
+        properties.put("TableDelaySeconds", "0");
+        properties.put("PlayerKeys1", "81,87,69,82");
+        properties.put("PlayerKeys2", "85,73,79,80");
+        properties.put("PointFreezeSeconds", "1");
+        properties.put("PenaltyFreezeSeconds", "3");
+        TableTest.MockLogger logger = new TableTest.MockLogger();
+        config = new Config(logger, properties);
+
         // purposely do not find the configuration files (use defaults here).
-        Env env = new Env(logger, new Config(logger, ""), ui, util);
+        Env env = new Env(logger, config, ui, util);
         player = new Player(env, dealer, table, 0, false);
         assertInvariants();
 
@@ -102,7 +118,7 @@ class PlayerTest {
 
     @Test
     void keyPress_FreezeTimeShouldFail(){
-        player.freezeTime = Long.MAX_VALUE;
+        player.setFreezeTime(Long.MAX_VALUE);
         int chosenSlotsSize = player.chosenSlots.size();
 
         player.keyPressed(0);
@@ -113,7 +129,7 @@ class PlayerTest {
 
     @Test
     void keyPress_ChosenSlotsSizeShouldFail(){
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < config.featureSize; i++)
             player.chosenSlots.add(i);
         int chosenSlotsSize = player.chosenSlots.size();
 
@@ -127,12 +143,41 @@ class PlayerTest {
     void keyPress_shouldPass(){
         assertEquals(player.chosenSlots.size(), 0);
 
-        int chosenSlotsSize = player.chosenSlots.size();
+        int expectedSlotsSize = player.chosenSlots.size() + 1;
 
         player.keyPressed(0);
 
-        assertEquals(player.chosenSlots.size(), chosenSlotsSize + 1);
+        assertEquals(player.chosenSlots.size(), expectedSlotsSize);
         assertTrue(player.chosenSlots.contains(0));
     }
+
+    @Test
+    void point_freezeTime(){
+        long expectedFreezeTime = Long.sum(System.currentTimeMillis(), config.pointFreezeMillis);
+
+        player.point();
+
+        assertTrue(player.getFreezeTime() >= expectedFreezeTime);
+    }
+
+    @Test
+    void penalty_freezeTime(){
+        long expectedFreezeTime = Long.sum(System.currentTimeMillis(), config.penaltyFreezeMillis);
+
+        player.penalty();
+
+        assertTrue(player.getFreezeTime() >= expectedFreezeTime);
+    }
+
+    @Test
+    void setFreezeTime(){
+        long expectedFreezeTime = config.penaltyFreezeMillis;
+
+        player.setFreezeTime(expectedFreezeTime);
+
+        assertEquals(player.getFreezeTime(), expectedFreezeTime);
+    }
+
+
 
 }

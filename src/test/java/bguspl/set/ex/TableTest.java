@@ -12,6 +12,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class TableTest {
 
@@ -95,30 +96,60 @@ class TableTest {
         placeSomeCardsAndAssert();
     }
 
+    @Test
+    void removeCard_AllSlotsAreFilled() {
+        fillAllSlots();
+        table.removeCard(0);
+        assertNull(slotToCard[0]);
+    }
+
     static class MockUserInterface implements UserInterface {
         @Override
-        public void placeCard(int card, int slot) {}
+        public void placeCard(int card, int slot) {
+        }
+
         @Override
-        public void removeCard(int slot) {}
+        public void removeCard(int slot) {
+        }
+
         @Override
-        public void setCountdown(long millies, boolean warn) {}
+        public void setCountdown(long millies, boolean warn) {
+        }
+
         @Override
-        public void setElapsed(long millies) {}
+        public void setElapsed(long millies) {
+        }
+
         @Override
-        public void setScore(int player, int score) {}
+        public void setScore(int player, int score) {
+        }
+
         @Override
-        public void setFreeze(int player, long millies) {}
+        public void setFreeze(int player, long millies) {
+        }
+
         @Override
-        public void placeToken(int player, int slot) {}
+        public void placeToken(int player, int slot) {
+        }
+
         @Override
-        public void removeTokens() {}
+        public void removeTokens() {
+        }
+
         @Override
-        public void removeTokens(int slot) {}
+        public void removeTokens(int slot) {
+        }
+
         @Override
-        public void removeToken(int player, int slot) {}
+        public void removeToken(int player, int slot) {
+        }
+
         @Override
-        public void announceWinner(int[] players) {}
-    };
+        public void announceWinner(int[] players) {
+        }
+    }
+
+    ;
 
     static class MockUtil implements Util {
         @Override

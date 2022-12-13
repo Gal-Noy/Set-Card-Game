@@ -25,13 +25,11 @@ enum Mode {
 /**
  * This class manages the dealer's threads and data
  *
- * @inv 0 <= deck.size() <= env.config.deckSize
- * @inv elapsedTime >= System.currentTimeMillis()
+ * @inv deck.size() <= env.config.deckSize
  * @inv playersTokens.size() == env.config.HumanPlayers + env.config.ComputerPlayers
- * @inv playersTokens values are 1
  * @inv gameMode == env.config.TurnTimeoutSeconds > 0 ? Mode.Timer : env.config.TurnTimeoutSeconds == 0 ? Mode.Elapsed : Mode.FreePlay
- * @inv 0 <= setsToRemoveByPlayer.size() <= env.config.HumanPlayers + env.config.ComputerPlayers
- * @inv 0 <= setsToRemove.size() <= number of sets on the table
+ * @inv setsToRemoveByPlayer.size() <= env.config.HumanPlayers + env.config.ComputerPlayers
+ * @inv setsToRemove.size() <= number of sets on the table
  */
 public class Dealer implements Runnable {
 
@@ -54,12 +52,12 @@ public class Dealer implements Runnable {
     /**
      * The list of card ids that are left in the dealer's deck.
      */
-    private final List<Integer> deck;
+    protected final List<Integer> deck;
 
     /**
      * True iff game should be terminated due to an external event.
      */
-    private volatile boolean terminate;
+    protected volatile boolean terminate;
 
     /**
      * The time when the dealer needs to reshuffle the deck due to turn timeout.
@@ -69,7 +67,7 @@ public class Dealer implements Runnable {
     /**
      * Time stamp to identify timer resets due to reshuffle/set collected.
      */
-    private long elapsedTime;
+    protected long elapsedTime;
 
     /**
      * For each player, hold current pressed slots.
@@ -79,12 +77,12 @@ public class Dealer implements Runnable {
     /**
      * Queue that holds players with a possible set.
      */
-    private final ConcurrentLinkedQueue<Integer> setsToCheckByPlayer;
+    protected final ConcurrentLinkedQueue<Integer> setsToCheckByPlayer;
 
     /**
      * Queue that holds legal sets to remove from table and deck.
      */
-    private final ConcurrentLinkedQueue<Integer[]> setsToRemove;
+    protected final ConcurrentLinkedQueue<Integer[]> setsToRemove;
 
     /**
      * Enumerates current game mode.
@@ -389,7 +387,7 @@ public class Dealer implements Runnable {
      *
      * @post - the table is empty from cards.
      */
-    private void removeAllCardsFromTable() {
+    protected void removeAllCardsFromTable() {
         table.tableReady = false;
 
         try {

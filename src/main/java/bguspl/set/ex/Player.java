@@ -72,7 +72,7 @@ public class Player implements Runnable {
     /**
      * The time when the player freeze will time out.
      */
-    protected volatile long freezeTime = -1;
+    private volatile long freezeTime = -1;
 
     /**
      * Signifies that a player chosen set is being examined.
