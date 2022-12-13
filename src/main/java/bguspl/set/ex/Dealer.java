@@ -166,8 +166,14 @@ public class Dealer implements Runnable {
         while (!setsToRemove.isEmpty()) {
             int[] setToRemove = setsToRemove.remove();
             for (int slot : setToRemove) {
-                deck.remove(table.slotToCard[slot]);
-                table.removeCard(slot);
+                try{
+                    table.slotLocks[slot].writeLock().lock();
+                    deck.remove(table.slotToCard[slot]);
+                    table.removeCard(slot);
+                }
+                finally {
+                    table.slotLocks[slot].writeLock().unlock();
+                }
             }
         }
     }
@@ -193,15 +199,26 @@ public class Dealer implements Runnable {
     }
 
     private boolean shuffleAndDeal() {
-        List<Integer> availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).collect(Collectors.toList());
-        for (int i = 0; i < availableSlots.size() && !deck.isEmpty(); i++) {
-            int slot = availableSlots.get(i);
-            int card = (int) (Math.random() * deck.size());
-            table.slotToCard[slot] = card;
-            table.placeCard(deck.get(card), slot);
-            deck.remove(card);
+        boolean tableFilled;
+        try{
+            for (int i = 0; i < table.slotToCard.length; i++)
+                table.slotLocks[i].writeLock().lock();
+
+            List<Integer> availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).collect(Collectors.toList());
+            for (int i = 0; i < availableSlots.size() && !deck.isEmpty(); i++) {
+                int slot = availableSlots.get(i);
+                int card = (int) (Math.random() * deck.size());
+                table.slotToCard[slot] = card;
+                table.placeCard(deck.get(card), slot);
+                deck.remove(card);
+            }
+            tableFilled = !availableSlots.isEmpty();
         }
-        return !availableSlots.isEmpty();
+        finally {
+            for (int i = table.slotToCard.length - 1; i >= 0; i--)
+                table.slotLocks[i].writeLock().unlock();
+        }
+        return tableFilled;
     }
 
     /**
@@ -252,13 +269,21 @@ public class Dealer implements Runnable {
      */
     private void removeAllCardsFromTable() {
         table.tableReady = false;
+        try{
+            for (int i = 0; i < table.slotToCard.length; i++)
+                table.slotLocks[i].writeLock().lock();
 
-        removeAllTokens();
+            removeAllTokens();
 
-        List<Integer> occupiedSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] != null).collect(Collectors.toList());
-        for (int slot : occupiedSlots) {
-            table.cardToSlot[table.slotToCard[slot]] = null;
-            table.removeCard(slot);
+            List<Integer> occupiedSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] != null).collect(Collectors.toList());
+            for (int slot : occupiedSlots) {
+                table.cardToSlot[table.slotToCard[slot]] = null;
+                table.removeCard(slot);
+            }
+        }
+        finally {
+            for (int i = table.slotToCard.length - 1; i >= 0; i--)
+                table.slotLocks[i].writeLock().unlock();
         }
     }
 
@@ -284,25 +309,34 @@ public class Dealer implements Runnable {
     private void examineSets() {
         while (!setsToCheckByPlayer.isEmpty()) {
             int nextPlayer = setsToCheckByPlayer.remove();
-            Set<Integer> possibleSet = playersTokens.get(nextPlayer);
+            List<Integer> possibleSet = new ArrayList<>(playersTokens.get(nextPlayer));
 
-            // Check the set for legality
-            int[] slotsToExamine = possibleSet.stream().mapToInt(Integer::intValue).toArray();
-            int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
+            try{
+                for (int i = 0; i < possibleSet.size(); i++)
+                    table.slotLocks[possibleSet.get(i)].readLock().lock();
 
-            // common tokens with previously removed set
-            if (cardsToExamine.length != env.config.featureSize) continue;
+                // Check the set for legality
+                int[] slotsToExamine = possibleSet.stream().mapToInt(Integer::intValue).toArray();
+                int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
 
-            boolean isLegalSet = env.util.testSet(cardsToExamine);
-            Player player = players[nextPlayer];
+                // common tokens with previously removed set
+                if (cardsToExamine.length != env.config.featureSize) continue;
+
+                boolean isLegalSet = env.util.testSet(cardsToExamine);
+                Player player = players[nextPlayer];
 
 
-            if (isLegalSet) { // if legal, remove tokens from relevant sets
-                setsToRemove.add(slotsToExamine);
-                removeWinningTokens(slotsToExamine);
-                player.point();
-            } else
-                player.penalty();
+                if (isLegalSet) { // if legal, remove tokens from relevant sets
+                    setsToRemove.add(slotsToExamine);
+                    removeWinningTokens(slotsToExamine);
+                    player.point();
+                } else
+                    player.penalty();
+            }
+            finally {
+                for (int i = possibleSet.size() - 1; i >= 0; i--)
+                    table.slotLocks[possibleSet.get(i)].readLock().unlock();
+            }
         }
         table.tableReady = false;
     }
@@ -311,13 +345,14 @@ public class Dealer implements Runnable {
         table.tableReady = false;
         for (Integer playerId : playersTokens.keySet()) {
             for (int slot : winningSlots)
-                removeToken(playerId, slot);
+                playersTokens.get(playerId).remove(slot);
         }
     }
 
     public void toggleToken(int playerId, int slot) {
         Set<Integer> playerSet = playersTokens.get(playerId);
         boolean containsSlot = playerSet.contains(slot);
+
         if (playerSet.size() < env.config.featureSize) {
             if (containsSlot)
                 removeToken(playerId, slot);

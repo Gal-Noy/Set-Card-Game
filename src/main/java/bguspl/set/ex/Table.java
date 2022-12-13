@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 /**
@@ -32,6 +34,8 @@ public class Table {
     protected final Integer[] cardToSlot; // slot per card (if any)
 
     protected volatile boolean tableReady;
+
+    protected ReadWriteLock[] slotLocks;
     /**
      * Constructor for testing.
      *
@@ -45,6 +49,10 @@ public class Table {
         this.slotToCard = slotToCard;
         this.cardToSlot = cardToSlot;
         this.tableReady = false;
+
+        this.slotLocks = new ReadWriteLock[slotToCard.length];
+        for (int i = 0; i < slotLocks.length; i++)
+            slotLocks[i] = new ReentrantReadWriteLock();
     }
 
     /**
@@ -117,6 +125,7 @@ public class Table {
 
         // Display changes on ui
         env.ui.removeCard(slot);
+        env.ui.removeTokens(slot);
     }
 
     /**

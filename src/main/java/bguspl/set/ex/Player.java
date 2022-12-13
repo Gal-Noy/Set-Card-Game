@@ -108,8 +108,14 @@ public class Player implements Runnable {
             // Allow actions iff game is running and table is available
             if (table.tableReady && !terminate) {
                 int clickedSlot = chosenSlots.remove();
-                if (table.slotToCard[clickedSlot] != null)
-                    dealer.toggleToken(id, clickedSlot);
+                try{
+                    table.slotLocks[clickedSlot].readLock().lock();
+                    if (table.slotToCard[clickedSlot] != null)
+                        dealer.toggleToken(id, clickedSlot);
+                }
+                finally {
+                    table.slotLocks[clickedSlot].readLock().unlock();
+                }
             }
         }
         if (!human) try {
@@ -202,8 +208,4 @@ public class Player implements Runnable {
     public long getFreezeTime() {
         return freezeTime;
     }
-}
-
-class AtomicTable {
-
 }
