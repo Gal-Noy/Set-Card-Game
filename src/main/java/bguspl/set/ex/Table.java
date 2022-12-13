@@ -20,7 +20,7 @@ public class Table {
     /**
      * The game environment object.
      */
-    private final Env env;
+    protected final Env env;
 
     /**
      * Mapping between a slot and the card placed in it (null if none).

@@ -57,7 +57,7 @@ public class Player implements Runnable {
     /**
      * True iff game should be terminated due to an external event.
      */
-    private volatile boolean terminate;
+    protected volatile boolean terminate;
 
     /**
      * The current score of the player.
@@ -67,12 +67,12 @@ public class Player implements Runnable {
     /**
      * Player's chosen slots.
      */
-    private final ConcurrentLinkedQueue<Integer> chosenSlots;
+    protected final ConcurrentLinkedQueue<Integer> chosenSlots;
 
     /**
      * The time when the player freeze will time out.
      */
-    private volatile long freezeTime = -1;
+    protected volatile long freezeTime = -1;
 
     /**
      * Signifies that a player chosen set is being examined.
@@ -163,6 +163,8 @@ public class Player implements Runnable {
 
     /**
      * Called when the game should be terminated due to an external event.
+     * @pre - terminate == false
+     * @post - terminate == true
      */
     public synchronized void terminate() {
         notifyAll();
