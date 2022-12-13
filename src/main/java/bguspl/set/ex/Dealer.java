@@ -112,7 +112,8 @@ public class Dealer implements Runnable {
         for (int i = players.length - 1; i >= 0; i--)
             try {
                 players[i].getThread().join();
-            } catch (InterruptedException ignored) {}
+            } catch (InterruptedException ignored) {
+            }
 
 
         System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
@@ -166,7 +167,7 @@ public class Dealer implements Runnable {
             int[] setToRemove = setsToRemove.remove();
             for (int slot : setToRemove) {
                 deck.remove(table.slotToCard[slot]);
-                table.removeCard(slot, true);
+                table.removeCard(slot);
             }
         }
     }
@@ -195,34 +196,15 @@ public class Dealer implements Runnable {
     }
 
     private boolean shuffleAndDeal() {
-        List<Integer> availableSlots = getAvailableSlots();
-        List<Integer> availableCards = getAvailableCards();
-        for (int i = 0; i < availableSlots.size() && !availableCards.isEmpty(); i++) {
+        List<Integer> availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).collect(Collectors.toList());
+        for (int i = 0; i < availableSlots.size() && !deck.isEmpty(); i++) {
             int slot = availableSlots.get(i);
-            int card = (int) (Math.random() * availableCards.size());
+            int card = (int) (Math.random() * deck.size());
             table.slotToCard[slot] = card;
-            table.placeCard(availableCards.get(card), slot);
-            availableCards.remove(card);
+            table.placeCard(deck.get(card), slot);
+            deck.remove(card);
         }
         return !availableSlots.isEmpty();
-    }
-
-    private List<Integer> getAvailableSlots() {
-        List<Integer> output = new ArrayList<>();
-        for (int i = 0; i < table.slotToCard.length; i++) {
-            if (table.slotToCard[i] == null)
-                output.add(i);
-        }
-        return output;
-    }
-
-    private List<Integer> getAvailableCards() {
-        List<Integer> output = new ArrayList<>();
-        for (int i = 0; i < table.cardToSlot.length; i++) {
-            if (table.cardToSlot[i] == null)
-                output.add(i);
-        }
-        return output;
     }
 
     /**
@@ -244,7 +226,7 @@ public class Dealer implements Runnable {
         long currentMillis = System.currentTimeMillis();
 
         for (Player player : players)
-            env.ui.setFreeze(player.getId(), formatTime(player.getFreezeTime() - currentMillis));
+            env.ui.setFreeze(player.getId(), formatTime(player.getFreezeTime() - currentMillis, false));
 
         if (gameMode == Mode.Timer) {
             if (reset) {
@@ -252,18 +234,21 @@ public class Dealer implements Runnable {
                 for (Player player : players)
                     player.setFreezeTime(-1);
             }
-            long delta = formatTime(reshuffleTime - currentMillis);
-            env.ui.setCountdown(delta, env.config.turnTimeoutWarningMillis >= delta);
+            long delta = reshuffleTime - currentMillis;
+            boolean warn = delta <= env.config.turnTimeoutWarningMillis;
+            env.ui.setCountdown(formatTime(delta, warn), warn);
 
         } else if (gameMode == Mode.Elapsed) {
             if (reset) {
                 elapsedTime = currentMillis;
             }
-            env.ui.setElapsed(formatTime(currentMillis - elapsedTime));
+            env.ui.setElapsed(formatTime(currentMillis - elapsedTime, false));
         }
     }
 
-    private long formatTime(long millis){return (millis + SECOND/2) / SECOND * SECOND;}
+    private long formatTime(long millis, boolean warn) {
+        return millis < 0 ? 0 : warn ? millis : (millis + SECOND / 2) / SECOND * SECOND;
+    }
 
     /**
      * Returns all the cards from the table to the deck.
@@ -276,7 +261,7 @@ public class Dealer implements Runnable {
         List<Integer> occupiedSlots = getOccupiedSlots();
         for (int slot : occupiedSlots) {
             table.cardToSlot[table.slotToCard[slot]] = null;
-            table.removeCard(slot, false);
+            table.removeCard(slot);
         }
     }
 
@@ -289,14 +274,11 @@ public class Dealer implements Runnable {
         return output;
     }
 
+    // Iterate each player's tokens set, remove tokens from set and from table
     private void removeAllTokens() {
-        // Iterate each player's tokens set, remove tokens from set and from table
-        for (Player player : players) {
-            Set<Integer> playerSet = playersTokens.get(player.getId());
-            for (int slot : playerSet)
-                table.removeToken(player.getId(), slot);
-            playerSet.clear();
-        }
+        table.removeAllTokens();
+        for (Set<Integer> set : playersTokens.values())
+            set.clear();
     }
 
     /**

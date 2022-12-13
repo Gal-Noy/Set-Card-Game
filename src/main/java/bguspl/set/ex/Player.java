@@ -131,27 +131,8 @@ public class Player implements Runnable {
                 List<Integer> slots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().collect(Collectors.toList());
                 Collections.shuffle(slots);
 
-                int[] clicked = new int[env.config.featureSize];
-                for (int i = 0; i < env.config.featureSize; i++) {
-                    int slot = slots.get(i);
-                    keyPressed(slot);
-                    clicked[i] = slot;
-                }
-
-                if (!env.util.testSet(clicked)) {
-                    try {
-                        Thread.sleep(env.config.penaltyFreezeMillis);
-                    } catch (InterruptedException ignored) {
-                    }
-                    for (int i = 0; i < env.config.featureSize; i++) {
-                        keyPressed(slots.get(i));
-                    }
-                } else {
-                    try {
-                        Thread.sleep(env.config.pointFreezeMillis);
-                    } catch (InterruptedException ignored) {
-                    }
-                }
+                for (int i = 0; i < env.config.featureSize; i++)
+                    keyPressed(slots.get(i));
             }
             System.out.printf("Info: Thread %s terminated.%n", Thread.currentThread().getName());
         }, "computer-" + id);
