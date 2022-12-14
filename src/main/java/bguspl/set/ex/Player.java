@@ -2,12 +2,8 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * This class manages the players' threads and data
@@ -210,28 +206,28 @@ public class Player implements Runnable {
     }
 
     /**
-     * Returns the player's score.
+     * @return - the player's score.
      */
     public int getScore() {
         return score;
     }
 
     /**
-     * Sets the player's thread.
+     * @post - playerThread == pThread
      */
     public void setThread(Thread pThread) {
         playerThread = pThread;
     }
 
     /**
-     * Returns the player's thread.
+     * @return - the player's thread.
      */
     public Thread getThread() {
         return playerThread;
     }
 
     /**
-     * Returns the player's id.
+     * @return - player's id
      */
     public int getId() {
         return id;
@@ -246,32 +242,23 @@ public class Player implements Runnable {
     }
 
     /**
-     * Returns the player's freezeTime.
+     * @return - player's freezeTime.
      */
     public long getFreezeTime() {
         return freezeTime;
     }
 
     /**
-     * clear chosenSlots queue.
-     * @pre - 0 <= chosenSlots.size() <= env.config.featureSize
-     * @post - chosenSlot is empty.
+     * @return - terminate state (for testing)
      */
-    public void clearTokens() {
-        chosenSlots.clear();
-    }
-    
-    /**
-     * returns terminate state (for testing)
-     */
-    public boolean getTerminate(){
+    public boolean getTerminate() {
         return terminate;
     }
 
     /**
-     * returns chosenSlots (for testing)
+     * @return - chosenSlots (for testing)
      */
-    public ConcurrentLinkedQueue<Integer> getChosenSlots(){
+    public ConcurrentLinkedQueue<Integer> getChosenSlots() {
         return chosenSlots;
     }
 }

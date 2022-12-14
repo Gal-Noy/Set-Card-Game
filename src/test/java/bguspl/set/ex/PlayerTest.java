@@ -64,6 +64,7 @@ class PlayerTest {
         Env env = new Env(logger, config, ui, util);
         player = new Player(env, dealer, table, 0, false);
         chosenSlots = player.getChosenSlots();
+
         assertInvariants();
 
         table.tableReady = true;
@@ -102,7 +103,7 @@ class PlayerTest {
     @Test
     void keyPress_TableReadyShouldFail(){
         table.tableReady = false;
-        
+
         int chosenSlotsSize = chosenSlots.size();
 
         player.keyPressed(0);
@@ -127,7 +128,7 @@ class PlayerTest {
     void keyPress_ChosenSlotsSizeShouldFail(){
 
         for (int i = 0; i < config.featureSize; i++)
-        chosenSlots.add(i);
+            chosenSlots.add(i);
         int chosenSlotsSize = chosenSlots.size();
 
         player.keyPressed(3);

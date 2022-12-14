@@ -3,7 +3,6 @@ package bguspl.set.ex;
 import bguspl.set.Env;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
@@ -69,7 +68,7 @@ public class Dealer implements Runnable {
     /**
      * For each player, hold current pressed slots.
      */
-    private final ConcurrentHashMap<Integer, ConcurrentSkipListSet<Integer>> playersTokens;
+    private final HashMap<Integer, ConcurrentSkipListSet<Integer>> playersTokens;
 
     /**
      * Queue that holds players with a possible set.
@@ -110,7 +109,7 @@ public class Dealer implements Runnable {
         this.players = players;
         this.deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
 
-        this.playersTokens = new ConcurrentHashMap<>();
+        this.playersTokens = new HashMap<>();
         for (int i = 0; i < this.players.length; i++)
             playersTokens.put(i, new ConcurrentSkipListSet<>());
 
@@ -206,7 +205,7 @@ public class Dealer implements Runnable {
     /**
      * Checks cards should be removed from the table and removes them.
      */
-    private void removeCardsFromTable() {
+    protected void removeCardsFromTable() {
         table.tableReady = false;
 
         while (!setsToRemove.isEmpty()) {
@@ -222,24 +221,11 @@ public class Dealer implements Runnable {
                     table.removeCard(slot, true);
                 }
 
-                clearAllQueues();
-
             } finally {
                 // Unlock locks.
                 table.unlockSlots(setToRemove, true);
             }
         }
-    }
-
-    /**
-     * clear all player's chosenSlot queues.
-     *
-     * @pre - 0 <= player's chosenSlots.size() <= env.config.featureSize
-     * @post - all player's chosenSlot queues are empty.
-     */
-    private void clearAllQueues() {
-        for (Player player : players)
-            player.clearTokens();
     }
 
     /**
@@ -267,8 +253,6 @@ public class Dealer implements Runnable {
         }
 
         table.tableReady = true;
-//        for (Player player : players)
-//            if (!player.human) player.aiThread.interrupt();
     }
 
     /**
@@ -394,8 +378,6 @@ public class Dealer implements Runnable {
                 table.cardToSlot[table.slotToCard[slot]] = null;
                 table.removeCard(slot, false);
             }
-
-            clearAllQueues();
 
         } finally {
             // Unlock locks.
@@ -535,7 +517,7 @@ public class Dealer implements Runnable {
      * @post - player's set contains slot and its size
      * @post - 1 <= player's set size <= env.config.featureSize.
      */
-    private void addToken(int playerId, int slot) {
+    protected void addToken(int playerId, int slot) {
         playersTokens.get(playerId).add(slot);
         table.placeToken(playerId, slot);
     }
@@ -551,9 +533,30 @@ public class Dealer implements Runnable {
      * @post - player's set does not contain slot
      * @post - 0 <= player's set size < env.config.featureSize.
      */
-    private void removeToken(int playerId, int slot) {
+    protected void removeToken(int playerId, int slot) {
         playersTokens.get(playerId).remove(slot);
         table.removeToken(playerId, slot);
+    }
+
+    /**
+     * @return - playersTokens (for testing)
+     */
+    public HashMap<Integer, ConcurrentSkipListSet<Integer>> getPlayersTokens(){
+        return playersTokens;
+    }
+
+    /**
+     * @return - setsToCheckByPlayer (for testing)
+     */
+    public ConcurrentLinkedQueue<Integer> getSetsToCheckByPlayer(){
+        return setsToCheckByPlayer;
+    }
+
+    /**
+     * @return - terminate state (for testing)
+     */
+    public boolean getTerminate() {
+        return terminate;
     }
 
 }
