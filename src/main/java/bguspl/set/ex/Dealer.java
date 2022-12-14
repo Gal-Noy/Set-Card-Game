@@ -6,9 +6,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -296,7 +293,7 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {
         try {
-            Thread.sleep(SECOND);
+            Thread.sleep(reshuffleTime - System.currentTimeMillis() <= env.config.turnTimeoutWarningMillis ? 10 : SECOND);
         } catch (InterruptedException ignored) {
         }
     }
