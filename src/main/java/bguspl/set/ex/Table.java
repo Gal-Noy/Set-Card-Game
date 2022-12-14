@@ -43,6 +43,11 @@ public class Table {
     protected ReadWriteLock[] slotLocks;
 
     /**
+     * indicator if a card is still in the deck.
+     */
+    private final int REMOVED = -1;
+
+    /**
      * Constructor for testing.
      *
      * @param env        - the game environment objects.
@@ -131,7 +136,7 @@ public class Table {
 
         int cardIdx = slotToCard[slot];
         slotToCard[slot] = null;
-        cardToSlot[cardIdx] = removeFromDeck ? -1 : null;
+        cardToSlot[cardIdx] = removeFromDeck ? REMOVED : null;
 
     }
 

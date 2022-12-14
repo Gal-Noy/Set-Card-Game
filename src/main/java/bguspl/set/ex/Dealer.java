@@ -200,15 +200,11 @@ public class Dealer implements Runnable {
      * @return true iff the game should be finished.
      */
     private boolean shouldFinish() {
-
-        if (terminate) return true;
-
-        return env.util.findSets(deck, 1).size() == 0;
-
+        return terminate || env.util.findSets(deck, 1).size() == 0;
     }
 
     /**
-     * Checks if any cards should be removed from the table and returns them to the deck.
+     * Checks cards should be removed from the table and removes them.
      */
     private void removeCardsFromTable() {
         table.tableReady = false;
@@ -237,6 +233,7 @@ public class Dealer implements Runnable {
 
     /**
      * clear all player's chosenSlot queues.
+     *
      * @pre - 0 <= player's chosenSlots.size() <= env.config.featureSize
      * @post - all player's chosenSlot queues are empty.
      */
@@ -280,8 +277,6 @@ public class Dealer implements Runnable {
      * @return - true iff any cards were placed on the table.
      */
     private boolean shuffleAndDeal() {
-
-        boolean tableChanged;
 
         // Randomly placing cards from deck on available slots on table.
         List<Integer> availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).collect(Collectors.toList());
