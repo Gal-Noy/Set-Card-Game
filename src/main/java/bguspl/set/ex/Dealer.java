@@ -92,6 +92,11 @@ public class Dealer implements Runnable {
     private final long SECOND = 1000;
 
     /**
+     * final value for ten milliseconds.
+     */
+    private final long TEN_MILLI_SECONDS = 10;
+
+    /**
      * The class constructor.
      *
      * @param env     - the environment object.
@@ -133,7 +138,7 @@ public class Dealer implements Runnable {
             player.setThread(new Thread(player, "player " + player.getId()));
             player.getThread().start();
             try {
-                Thread.sleep(SECOND / players.length);
+                Thread.sleep(TEN_MILLI_SECONDS);
             } catch (InterruptedException ignored) {
             }
         }
@@ -181,7 +186,7 @@ public class Dealer implements Runnable {
         for (int i = players.length - 1; i >= 0; i--) {
             players[i].terminate();
             try {
-                Thread.sleep(SECOND / players.length);
+                Thread.sleep(TEN_MILLI_SECONDS);
             } catch (InterruptedException ignored) {
             }
         }
@@ -293,7 +298,7 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {
         try {
-            Thread.sleep(reshuffleTime - System.currentTimeMillis() <= env.config.turnTimeoutWarningMillis ? 10 : SECOND);
+            Thread.sleep(reshuffleTime - System.currentTimeMillis() <= env.config.turnTimeoutWarningMillis ? TEN_MILLI_SECONDS : SECOND);
         } catch (InterruptedException ignored) {
         }
     }
