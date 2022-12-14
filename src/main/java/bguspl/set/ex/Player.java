@@ -251,4 +251,13 @@ public class Player implements Runnable {
     public long getFreezeTime() {
         return freezeTime;
     }
+
+    /**
+     * clear chosenSlots queue.
+     * @pre - 0 <= chosenSlots.size() <= env.config.featureSize
+     * @post - chosenSlot is empty.
+     */
+    public void clearTokens() {
+        chosenSlots.clear();
+    }
 }

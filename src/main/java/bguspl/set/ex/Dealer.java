@@ -226,11 +226,23 @@ public class Dealer implements Runnable {
                     table.removeCard(slot, true);
                 }
 
+                clearAllQueues();
+
             } finally {
                 // Unlock locks.
                 table.unlockSlots(setToRemove, true);
             }
         }
+    }
+
+    /**
+     * clear all player's chosenSlot queues.
+     * @pre - 0 <= player's chosenSlots.size() <= env.config.featureSize
+     * @post - all player's chosenSlot queues are empty.
+     */
+    private void clearAllQueues() {
+        for (Player player : players)
+            player.clearTokens();
     }
 
     /**
@@ -387,6 +399,9 @@ public class Dealer implements Runnable {
                 table.cardToSlot[table.slotToCard[slot]] = null;
                 table.removeCard(slot, false);
             }
+
+            clearAllQueues();
+
         } finally {
             // Unlock locks.
             table.unlockAllSlots(true);
