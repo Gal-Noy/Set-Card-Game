@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Properties;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,6 +24,9 @@ import static org.mockito.Mockito.when;
 class PlayerTest {
 
     Player player;
+
+    ConcurrentLinkedQueue<Integer> chosenSlots;
+
     @Mock
     Util util;
     @Mock
@@ -59,6 +63,7 @@ class PlayerTest {
         // purposely do not find the configuration files (use defaults here).
         Env env = new Env(logger, config, ui, util);
         player = new Player(env, dealer, table, 0, false);
+        chosenSlots = player.getChosenSlots();
         assertInvariants();
 
         table.tableReady = true;
@@ -91,53 +96,57 @@ class PlayerTest {
     @Test
     void terminate() {
         player.terminate();
-        assertTrue(player.terminate);
+        assertTrue(player.getTerminate());
     }
 
     @Test
     void keyPress_TableReadyShouldFail(){
         table.tableReady = false;
-        int chosenSlotsSize = player.chosenSlots.size();
+        
+        int chosenSlotsSize = chosenSlots.size();
 
         player.keyPressed(0);
 
-        assertEquals(player.chosenSlots.size(), chosenSlotsSize);
-        assertFalse(player.chosenSlots.contains(0));
+        assertEquals(chosenSlots.size(), chosenSlotsSize);
+        assertFalse(chosenSlots.contains(0));
     }
 
     @Test
     void keyPress_FreezeTimeShouldFail(){
         player.setFreezeTime(Long.MAX_VALUE);
-        int chosenSlotsSize = player.chosenSlots.size();
+
+        int chosenSlotsSize = chosenSlots.size();
 
         player.keyPressed(0);
 
-        assertEquals(player.chosenSlots.size(), chosenSlotsSize);
-        assertFalse(player.chosenSlots.contains(0));
+        assertEquals(chosenSlots.size(), chosenSlotsSize);
+        assertFalse(chosenSlots.contains(0));
     }
 
     @Test
     void keyPress_ChosenSlotsSizeShouldFail(){
+
         for (int i = 0; i < config.featureSize; i++)
-            player.chosenSlots.add(i);
-        int chosenSlotsSize = player.chosenSlots.size();
+        chosenSlots.add(i);
+        int chosenSlotsSize = chosenSlots.size();
 
         player.keyPressed(3);
 
-        assertEquals(player.chosenSlots.size(), chosenSlotsSize);
-        assertFalse(player.chosenSlots.contains(3));
+        assertEquals(chosenSlots.size(), chosenSlotsSize);
+        assertFalse(chosenSlots.contains(3));
     }
 
     @Test
     void keyPress_shouldPass(){
-        assertEquals(player.chosenSlots.size(), 0);
 
-        int expectedSlotsSize = player.chosenSlots.size() + 1;
+        assertEquals(chosenSlots.size(), 0);
+
+        int expectedSlotsSize = chosenSlots.size() + 1;
 
         player.keyPressed(0);
 
-        assertEquals(player.chosenSlots.size(), expectedSlotsSize);
-        assertTrue(player.chosenSlots.contains(0));
+        assertEquals(chosenSlots.size(), expectedSlotsSize);
+        assertTrue(chosenSlots.contains(0));
     }
 
     @Test

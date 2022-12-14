@@ -47,17 +47,17 @@ public class Player implements Runnable {
     /**
      * The thread of the AI (computer) player (an additional thread used to generate key presses).
      */
-    protected Thread aiThread;
+    private Thread aiThread;
 
     /**
      * True iff the player is human (not a computer player).
      */
-    protected final boolean human;
+    private final boolean human;
 
     /**
      * True iff game should be terminated due to an external event.
      */
-    protected volatile boolean terminate;
+    private volatile boolean terminate;
 
     /**
      * The current score of the player.
@@ -67,7 +67,7 @@ public class Player implements Runnable {
     /**
      * Player's chosen slots.
      */
-    protected final ConcurrentLinkedQueue<Integer> chosenSlots;
+    private final ConcurrentLinkedQueue<Integer> chosenSlots;
 
     /**
      * The time when the player freeze will time out.
@@ -194,9 +194,9 @@ public class Player implements Runnable {
     public synchronized void point() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.pointFreezeMillis);
         notifyAll();
+        env.ui.setScore(id, ++score);
 
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
-        env.ui.setScore(id, ++score);
     }
 
     /**
@@ -259,5 +259,19 @@ public class Player implements Runnable {
      */
     public void clearTokens() {
         chosenSlots.clear();
+    }
+    
+    /**
+     * returns terminate state (for testing)
+     */
+    public boolean getTerminate(){
+        return terminate;
+    }
+
+    /**
+     * returns chosenSlots (for testing)
+     */
+    public ConcurrentLinkedQueue<Integer> getChosenSlots(){
+        return chosenSlots;
     }
 }
