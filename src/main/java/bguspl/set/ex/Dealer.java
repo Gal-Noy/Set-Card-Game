@@ -5,6 +5,8 @@ import bguspl.set.Env;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -24,7 +26,7 @@ enum Mode {
  * @inv deck.size() <= env.config.deckSize
  * @inv playersTokens.size() == env.config.HumanPlayers + env.config.ComputerPlayers
  * @inv gameMode == env.config.TurnTimeoutSeconds > 0 ? Mode.Timer : env.config.TurnTimeoutSeconds == 0 ? Mode.Elapsed : Mode.FreePlay
- * @inv setsToRemoveByPlayer.size() <= env.config.HumanPlayers + env.config.ComputerPlayers
+ * @inv setsToCheckByPlayer.size() <= env.config.HumanPlayers + env.config.ComputerPlayers
  * @inv setsToRemove.size() <= number of sets on the table
  */
 public class Dealer implements Runnable {
@@ -68,17 +70,22 @@ public class Dealer implements Runnable {
     /**
      * For each player, hold current pressed slots.
      */
-    private final HashMap<Integer, ConcurrentSkipListSet<Integer>> playersTokens;
+    private final HashMap<Integer, Set<Integer>> playersTokens;
 
     /**
      * Queue that holds players with a possible set.
      */
-    protected final ConcurrentLinkedQueue<Integer> setsToCheckByPlayer;
+    private final Queue<Integer> setsToCheckByPlayer;
+
+    /**
+     * Lock for the setsToCheckByPlayer queue.
+     */
+    private final Lock queueLock;
 
     /**
      * Queue that holds legal sets to remove from table and deck.
      */
-    protected final ConcurrentLinkedQueue<Integer[]> setsToRemove;
+    private final Queue<Integer[]> setsToRemove;
 
     /**
      * Enumerates current game mode.
@@ -114,6 +121,8 @@ public class Dealer implements Runnable {
             playersTokens.put(i, new ConcurrentSkipListSet<>());
 
         this.setsToCheckByPlayer = new ConcurrentLinkedQueue<>();
+
+        this.queueLock = new ReentrantLock();
 
         this.setsToRemove = new ConcurrentLinkedQueue<>();
 
@@ -423,44 +432,48 @@ public class Dealer implements Runnable {
      * @post - setsToCheckByPlayer is empty.
      */
     private void examineSets() {
+        try {
+            queueLock.lock();
+            while (!setsToCheckByPlayer.isEmpty()) {
+                // Acquire next set to examine and its player.
+                int nextPlayer = setsToCheckByPlayer.remove();
+                Player player = players[nextPlayer];
+                List<Integer> possibleSet = new ArrayList<>(playersTokens.get(nextPlayer));
 
-        while (!setsToCheckByPlayer.isEmpty()) {
-            // Acquire next set to examine and its player.
-            int nextPlayer = setsToCheckByPlayer.remove();
-            Player player = players[nextPlayer];
-            List<Integer> possibleSet = new ArrayList<>(playersTokens.get(nextPlayer));
+                try {
+                    // Lock locks.
+                    table.lockAllSlots(false);
 
-            try {
-                // Lock locks.
-                table.lockAllSlots(false);
-
-                // Check the set for legality
-                int[] slotsToExamine = possibleSet.stream().mapToInt(Integer::intValue).toArray();
-                int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
+                    // Check the set for legality
+                    int[] slotsToExamine = possibleSet.stream().mapToInt(Integer::intValue).toArray();
+                    int[] cardsToExamine = possibleSet.stream().mapToInt(Integer::intValue).map(slot -> table.slotToCard[slot]).toArray();
 
 
-                // Check if any tokens were removed from the set while another set was being examined.
-                if (cardsToExamine.length != env.config.featureSize) continue;
+                    // Check if any tokens were removed from the set while another set was being examined.
+                    if (cardsToExamine.length != env.config.featureSize) continue;
 
-                // Check if the set is legal.
-                boolean isLegalSet = env.util.testSet(cardsToExamine);
+                    // Check if the set is legal.
+                    boolean isLegalSet = env.util.testSet(cardsToExamine);
 
-                // If legal, remove tokens from relevant sets and add them to setsToRemove.
-                if (isLegalSet) {
-                    setsToRemove.add(Arrays.stream(slotsToExamine).boxed().toArray(Integer[]::new));
-                    removeWinningTokens(slotsToExamine);
-                    player.point();
-                } else // If not legal, penalize player.
-                    player.penalty();
+                    // If legal, remove tokens from relevant sets and add them to setsToRemove.
+                    if (isLegalSet) {
+                        setsToRemove.add(Arrays.stream(slotsToExamine).boxed().toArray(Integer[]::new));
+                        removeWinningTokens(slotsToExamine);
+                        player.point();
+                    } else // If not legal, penalize player.
+                        player.penalty();
 
-            } finally {
-                // Unlock locks.
-                table.unlockAllSlots(false);
+                } finally {
+                    // Unlock locks.
+                    table.unlockAllSlots(false);
+                }
             }
+        } finally {
+            queueLock.unlock();
         }
-
         table.tableReady = false;
     }
+
 
     /**
      * Remove tokens of legal set from playersTokens and table.
@@ -496,7 +509,12 @@ public class Dealer implements Runnable {
                 // Set size is now env.config.featureSize, so we can check if it's a legal set.
                 if (playerSet.size() == env.config.featureSize) {
                     // Add player to setsToCheckByPlayer.
-                    setsToCheckByPlayer.add(playerId);
+                    try{
+                        queueLock.lock();
+                        setsToCheckByPlayer.add(playerId);
+                    } finally {
+                        queueLock.unlock();
+                    }
 
                     // Wakes the dealer thread to check the set.
                     dealerThread.interrupt();
@@ -541,15 +559,22 @@ public class Dealer implements Runnable {
     /**
      * @return - playersTokens (for testing)
      */
-    public HashMap<Integer, ConcurrentSkipListSet<Integer>> getPlayersTokens(){
+    public HashMap<Integer, Set<Integer>> getPlayersTokens() {
         return playersTokens;
     }
 
     /**
      * @return - setsToCheckByPlayer (for testing)
      */
-    public ConcurrentLinkedQueue<Integer> getSetsToCheckByPlayer(){
+    public Queue<Integer> getSetsToCheckByPlayer() {
         return setsToCheckByPlayer;
+    }
+
+    /**
+     * @return - setsToRemove (for testing)
+     */
+    public Queue<Integer[]> getSetsToRemove() {
+        return setsToRemove;
     }
 
     /**

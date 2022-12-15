@@ -98,7 +98,7 @@ class DealerTest {
         int c1 = table.cardToSlot[1];
         int c2 = table.cardToSlot[2];
 
-        dealer.setsToRemove.add(legalSet);
+        dealer.getSetsToRemove().add(legalSet);
         dealer.removeCardsFromTable();
 
         assertFalse(dealer.deck.contains(c0));
