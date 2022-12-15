@@ -2,6 +2,7 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 
@@ -63,7 +64,12 @@ public class Player implements Runnable {
     /**
      * Player's chosen slots.
      */
-    private final ConcurrentLinkedQueue<Integer> chosenSlots;
+    private final Queue<Integer> chosenSlots;
+
+    /**
+     * signifier if the player's set is being examined by the dealer.
+     */
+    protected volatile boolean examined = false;
 
     /**
      * The time when the player freeze will time out.
@@ -174,7 +180,7 @@ public class Player implements Runnable {
     public synchronized void keyPressed(int slot) {
 
         // Allow key presses iff all conditions are met.
-        if (table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
+        if (!examined && table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
             chosenSlots.add(slot);
             notifyAll();
         }
@@ -186,9 +192,11 @@ public class Player implements Runnable {
      * @post - the player's score is increased by 1.
      * @post - the player's score is updated in the ui.
      * @post - the player's freeze time is set to the current time plus the point freeze time.
+     * @post - the player's examined is set to false.
      */
     public synchronized void point() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.pointFreezeMillis);
+        examined = false;
         notifyAll();
         env.ui.setScore(id, ++score);
 
@@ -199,9 +207,11 @@ public class Player implements Runnable {
      * Penalize a player and perform other related actions.
      *
      * @post - the player's freeze time is set to the current time plus the penalty freeze time.
+     * @post - the player's examined is set to false.
      */
     public synchronized void penalty() {
         freezeTime = Long.sum(System.currentTimeMillis(), env.config.penaltyFreezeMillis);
+        examined = false;
         notifyAll();
     }
 
@@ -258,7 +268,7 @@ public class Player implements Runnable {
     /**
      * @return - chosenSlots (for testing)
      */
-    public ConcurrentLinkedQueue<Integer> getChosenSlots() {
+    public Queue<Integer> getChosenSlots() {
         return chosenSlots;
     }
 }

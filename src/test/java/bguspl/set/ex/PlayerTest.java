@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Properties;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
@@ -25,7 +26,7 @@ class PlayerTest {
 
     Player player;
 
-    ConcurrentLinkedQueue<Integer> chosenSlots;
+    Queue<Integer> chosenSlots;
 
     @Mock
     Util util;
@@ -98,6 +99,17 @@ class PlayerTest {
     void terminate() {
         player.terminate();
         assertTrue(player.getTerminate());
+    }
+
+    @Test
+    void keyPress_ExamineShouldFail() {
+        player.examined = true;
+        int chosenSlotsSize = player.getChosenSlots().size();
+
+        player.keyPressed(0);
+
+        assertEquals(player.getChosenSlots().size(), chosenSlotsSize);
+        assertFalse(player.getChosenSlots().contains(0));
     }
 
     @Test

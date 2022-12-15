@@ -450,7 +450,10 @@ public class Dealer implements Runnable {
 
 
                     // Check if any tokens were removed from the set while another set was being examined.
-                    if (cardsToExamine.length != env.config.featureSize) continue;
+                    if (cardsToExamine.length != env.config.featureSize) {
+                        player.examined = false;
+                        continue;
+                    }
 
                     // Check if the set is legal.
                     boolean isLegalSet = env.util.testSet(cardsToExamine);
@@ -480,13 +483,15 @@ public class Dealer implements Runnable {
      *
      * @param winningSlots - the slots of the legal set.
      * @post - each set in playersTokens contains only tokens that are not in winningSlots.
+     * @post - if any token was removed from player's set, its examined field is set to false.
      */
     private void removeWinningTokens(int[] winningSlots) {
         table.tableReady = false;
 
         for (Integer playerId : playersTokens.keySet())
             for (int slot : winningSlots)
-                playersTokens.get(playerId).remove(slot);
+                if (playersTokens.get(playerId).remove(slot))
+                    players[playerId].examined = false;
     }
 
     /**
@@ -515,6 +520,8 @@ public class Dealer implements Runnable {
                     } finally {
                         queueLock.unlock();
                     }
+
+                    players[playerId].examined = true;
 
                     // Wakes the dealer thread to check the set.
                     dealerThread.interrupt();
