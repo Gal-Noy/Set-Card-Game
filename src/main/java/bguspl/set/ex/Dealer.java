@@ -277,7 +277,6 @@ public class Dealer implements Runnable {
         for (int i = 0; i < availableSlots.size() && !availableCards.isEmpty(); i++) {
             int slot = availableSlots.get(i);
             int card = (int) (Math.random() * availableCards.size());
-            table.slotToCard[slot] = card;
             table.placeCard(availableCards.get(card), slot);
             availableCards.remove(card);
         }
