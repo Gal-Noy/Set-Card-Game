@@ -6,7 +6,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -51,6 +53,11 @@ public class Dealer implements Runnable {
      * The list of card ids that are left in the dealer's deck.
      */
     protected final List<Integer> deck;
+
+    /**
+     * Lock for the deck.
+     */
+    private final ReadWriteLock deckLock;
 
     /**
      * True iff game should be terminated due to an external event.
@@ -115,6 +122,8 @@ public class Dealer implements Runnable {
         this.table = table;
         this.players = players;
         this.deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
+
+        this.deckLock = new ReentrantReadWriteLock();
 
         this.playersTokens = new HashMap<>();
         for (int i = 0; i < this.players.length; i++)
@@ -208,7 +217,20 @@ public class Dealer implements Runnable {
      * @return true iff the game should be finished.
      */
     private boolean shouldFinish() {
-        return terminate || env.util.findSets(deck, 1).size() == 0;
+        if (terminate) return true;
+
+        boolean shouldFinish;
+
+        try {
+            deckLock.readLock().lock();
+
+            shouldFinish = env.util.findSets(deck, 1).size() == 0;
+
+        } finally {
+            deckLock.readLock().unlock();
+        }
+
+        return shouldFinish;
     }
 
     /**
@@ -225,10 +247,8 @@ public class Dealer implements Runnable {
                 // Lock locks.
                 table.lockSlots(setToRemove, true);
 
-                for (int slot : setToRemove) {
-                    deck.remove(table.slotToCard[slot]);
-                    table.removeCard(slot, true);
-                }
+                for (int slot : setToRemove)
+                    table.removeCard(slot);
 
             } finally {
                 // Unlock locks.
@@ -271,25 +291,24 @@ public class Dealer implements Runnable {
      */
     private boolean shuffleAndDeal() {
 
-        // Randomly placing cards from deck on available slots on table.
-        List<Integer> availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).collect(Collectors.toList());
-        List<Integer> availableCards = getAvailableCards();
-        for (int i = 0; i < availableSlots.size() && !availableCards.isEmpty(); i++) {
-            int slot = availableSlots.get(i);
-            int card = (int) (Math.random() * availableCards.size());
-            table.placeCard(availableCards.get(card), slot);
-            availableCards.remove(card);
-        }
-        return !availableSlots.isEmpty();
-    }
+        Integer[] availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).toArray(Integer[]::new);
 
-    private List<Integer> getAvailableCards() {
-        List<Integer> output = new ArrayList<>();
-        for (int i = 0; i < table.cardToSlot.length; i++) {
-            if (table.cardToSlot[i] == null)
-                output.add(i);
+        try{
+            // Lock locks.
+            table.lockSlots(availableSlots, true);
+            deckLock.writeLock().lock();
+
+            Collections.shuffle(deck);
+            for (int i = 0; i < Math.min(deck.size(), availableSlots.length); i++)
+                table.placeCard(deck.remove(0), availableSlots[i]);
+
+        } finally {
+            // Unlock locks.
+            deckLock.writeLock().unlock();
+            table.unlockSlots(availableSlots, true);
         }
-        return output;
+
+        return availableSlots.length > 0;
     }
 
     /**
@@ -377,17 +396,22 @@ public class Dealer implements Runnable {
         try {
             // Lock locks.
             table.lockAllSlots(true);
+            deckLock.writeLock().lock();
 
             removeAllTokens();
             clearAllPlayersQueues();
 
             List<Integer> filledSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] != null).collect(Collectors.toList());
 
-            for (int slot : filledSlots)
-                table.removeCard(slot, false);
+            for (int slot : filledSlots) {
+                // Return card to deck
+                deck.add(table.slotToCard[slot]);
+                table.removeCard(slot);
+            }
 
         } finally {
             // Unlock locks.
+            deckLock.writeLock().unlock();
             table.unlockAllSlots(true);
         }
     }
@@ -406,6 +430,7 @@ public class Dealer implements Runnable {
 
     /**
      * clear all players' queues.
+     *
      * @post - all players' queues are empty.
      */
     private void clearAllPlayersQueues() {
@@ -521,7 +546,7 @@ public class Dealer implements Runnable {
                 // Set size is now env.config.featureSize, so we can check if it's a legal set.
                 if (playerSet.size() == env.config.featureSize) {
                     // Add player to setsToCheckByPlayer.
-                    try{
+                    try {
                         queueLock.lock();
                         setsToCheckByPlayer.add(playerId);
                     } finally {

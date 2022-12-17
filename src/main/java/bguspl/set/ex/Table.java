@@ -43,11 +43,6 @@ public class Table {
     protected ReadWriteLock[] slotLocks;
 
     /**
-     * indicator if a card is still in the deck.
-     */
-    private final int REMOVED = -1;
-
-    /**
      * Constructor for testing.
      *
      * @param env        - the game environment objects.
@@ -125,7 +120,7 @@ public class Table {
      * Removes a card from a grid slot on the table.
      * @param slot - the slot from which to remove the card.
      */
-    public void removeCard(int slot, boolean removeFromDeck) {
+    public void removeCard(int slot) {
         try {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {}
@@ -136,7 +131,7 @@ public class Table {
 
         int cardIdx = slotToCard[slot];
         slotToCard[slot] = null;
-        cardToSlot[cardIdx] = removeFromDeck ? REMOVED : null;
+        cardToSlot[cardIdx] = null;
 
     }
 

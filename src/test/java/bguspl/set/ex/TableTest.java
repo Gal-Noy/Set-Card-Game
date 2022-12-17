@@ -99,7 +99,7 @@ class TableTest {
     @Test
     void removeCard_AllSlotsAreFilled() {
         fillAllSlots();
-        table.removeCard(0, false);
+        table.removeCard(0);
         assertNull(slotToCard[0]);
     }
 
