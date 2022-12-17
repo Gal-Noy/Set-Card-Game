@@ -122,7 +122,7 @@ public class Dealer implements Runnable {
 
         this.setsToCheckByPlayer = new ConcurrentLinkedQueue<>();
 
-        this.queueLock = new ReentrantLock();
+        this.queueLock = new ReentrantLock(true);
 
         this.setsToRemove = new ConcurrentLinkedQueue<>();
 
@@ -380,6 +380,7 @@ public class Dealer implements Runnable {
             table.lockAllSlots(true);
 
             removeAllTokens();
+            clearAllPlayersQueues();
 
             List<Integer> filledSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] != null).collect(Collectors.toList());
 
@@ -404,6 +405,15 @@ public class Dealer implements Runnable {
         table.removeAllTokens();
         for (Set<Integer> set : playersTokens.values())
             set.clear();
+    }
+
+    /**
+     * clear all players' queues.
+     * @post - all players' queues are empty.
+     */
+    private void clearAllPlayersQueues() {
+        for (Player player : players)
+            player.clearChosenSlots();
     }
 
     /**
