@@ -384,10 +384,8 @@ public class Dealer implements Runnable {
 
             List<Integer> filledSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] != null).collect(Collectors.toList());
 
-            for (int slot : filledSlots) {
-                table.cardToSlot[table.slotToCard[slot]] = null;
+            for (int slot : filledSlots)
                 table.removeCard(slot, false);
-            }
 
         } finally {
             // Unlock locks.
