@@ -118,7 +118,7 @@ public class Player implements Runnable {
 
             // Sleep until woken by input manager thread or game termination.
             synchronized (this) {
-                while (queueIsEmpty() && !terminate)
+                while (queueSize() == 0 && !terminate)
                     try {
                         wait();
                     } catch (InterruptedException ignored) {
@@ -160,11 +160,11 @@ public class Player implements Runnable {
      * check if the chosenSlots queue is empty.
      * @return - true iff the chosenSlots queue is empty.
      */
-    private boolean queueIsEmpty() {
-        boolean output;
+    private int queueSize() {
+        int output;
         try {
             chosenSlotsLock.readLock().lock();
-            output = chosenSlots.isEmpty();
+            output = chosenSlots.size();
         } finally {
             chosenSlotsLock.readLock().unlock();
         }
@@ -182,8 +182,8 @@ public class Player implements Runnable {
             while (!terminate) {
 
                 // Pick random slot from the table.
-                keyPressed((int) (Math.random() * env.config.tableSize));
-
+                if (queueSize() < env.config.featureSize)
+                    keyPressed((int) (Math.random() * env.config.tableSize));
 
             }
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " terminated.");
