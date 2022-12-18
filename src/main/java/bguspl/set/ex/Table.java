@@ -129,9 +129,8 @@ public class Table {
         env.ui.removeTokens(slot);
         env.ui.removeCard(slot);
 
-        int cardIdx = slotToCard[slot];
+        cardToSlot[slotToCard[slot]] = null;
         slotToCard[slot] = null;
-        cardToSlot[cardIdx] = null;
 
     }
 

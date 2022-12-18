@@ -275,12 +275,10 @@ public class Dealer implements Runnable {
         boolean tableChanged = shuffleAndDeal();
 
         if (gameMode != Mode.Timer) {
-
             // Check if any sets were found on table.
             List<Integer> cardsOnTable = Arrays.stream(table.slotToCard).filter(Objects::nonNull).collect(Collectors.toList());
             boolean setsAvailable = env.util.findSets(cardsOnTable, 1).size() > 0;
             reshuffleTime = !setsAvailable ? System.currentTimeMillis() : Long.MAX_VALUE;
-
         }
 
         if (tableChanged) {
