@@ -221,10 +221,15 @@ public class Dealer implements Runnable {
 
         boolean shouldFinish;
 
+        List<Integer> cardsOnTable = Arrays.stream(table.slotToCard).filter(Objects::nonNull).collect(Collectors.toList());
+
         try {
             deckLock.readLock().lock();
 
-            shouldFinish = env.util.findSets(deck, 1).size() == 0;
+            if (!deck.isEmpty())
+                shouldFinish = env.util.findSets(deck, 1).size() == 0;
+            else
+                shouldFinish = env.util.findSets(cardsOnTable, 1).size() == 0;
 
         } finally {
             deckLock.readLock().unlock();
@@ -315,9 +320,9 @@ public class Dealer implements Runnable {
     /**
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
      */
-    private synchronized void sleepUntilWokenOrTimeout() {
+    private void sleepUntilWokenOrTimeout() {
         try{
-            wait(reshuffleTime - System.currentTimeMillis() <= env.config.turnTimeoutWarningMillis ? TEN_MILLI_SECONDS : SECOND);
+            Thread.sleep(reshuffleTime - System.currentTimeMillis() <= env.config.turnTimeoutWarningMillis ? TEN_MILLI_SECONDS : SECOND);
         } catch (InterruptedException ignored) {
         }
     }
@@ -547,7 +552,7 @@ public class Dealer implements Runnable {
                 addToken(playerId, slot);
 
                 // Set size is now env.config.featureSize, so we can check if it's a legal set.
-                if (playerSet.size() == env.config.featureSize) {
+                if (playerSet.size() == env.config.featureSize){
                     // Add player to setsToCheckByPlayer.
                     try {
                         queueLock.lock();
@@ -559,9 +564,7 @@ public class Dealer implements Runnable {
                     players[playerId].examined = true;
 
                     // Wakes the dealer thread to check the set.
-                    synchronized (dealerThread) {
-                        dealerThread.notifyAll();
-                    }
+                    dealerThread.interrupt();
                 }
             }
         } else if (containsSlot)
