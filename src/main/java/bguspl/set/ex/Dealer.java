@@ -276,8 +276,10 @@ public class Dealer implements Runnable {
         }
 
         // Reset timer in case table changed.
-        if (tableChanged && !shouldFinish())
+        if (tableChanged && !shouldFinish()) {
+            if (env.config.hints) table.hints();
             updateTimerDisplay(true);
+        }
 
         table.tableReady = true;
     }
@@ -313,9 +315,9 @@ public class Dealer implements Runnable {
     /**
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
      */
-    private void sleepUntilWokenOrTimeout() {
-        try {
-            Thread.sleep(reshuffleTime - System.currentTimeMillis() <= env.config.turnTimeoutWarningMillis ? TEN_MILLI_SECONDS : SECOND);
+    private synchronized void sleepUntilWokenOrTimeout() {
+        try{
+            wait(reshuffleTime - System.currentTimeMillis() <= env.config.turnTimeoutWarningMillis ? TEN_MILLI_SECONDS : SECOND);
         } catch (InterruptedException ignored) {
         }
     }
@@ -506,6 +508,7 @@ public class Dealer implements Runnable {
         } finally {
             queueLock.unlock();
         }
+        // Pause the game from further actions.
         table.tableReady = false;
     }
 
@@ -556,7 +559,9 @@ public class Dealer implements Runnable {
                     players[playerId].examined = true;
 
                     // Wakes the dealer thread to check the set.
-                    dealerThread.interrupt();
+                    synchronized (dealerThread) {
+                        dealerThread.notifyAll();
+                    }
                 }
             }
         } else if (containsSlot)
