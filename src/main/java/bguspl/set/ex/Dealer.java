@@ -185,7 +185,7 @@ public class Dealer implements Runnable {
      * The inner loop of the dealer thread that runs as long as the countdown did not time out.
      */
     private void timerLoop() {
-        while (!terminate && System.currentTimeMillis() < reshuffleTime) {
+        while (!shouldFinish() && System.currentTimeMillis() < reshuffleTime) {
             sleepUntilWokenOrTimeout();
             examineSets();
             updateTimerDisplay(false);
@@ -217,25 +217,25 @@ public class Dealer implements Runnable {
      * @return true iff the game should be finished.
      */
     private boolean shouldFinish() {
-        if (terminate) return true;
+        return terminate || noSetsLeft();
+    }
 
-        boolean shouldFinish;
-
-        List<Integer> cardsOnTable = Arrays.stream(table.slotToCard).filter(Objects::nonNull).collect(Collectors.toList());
+    private boolean noSetsLeft(){
+        boolean ans;
 
         try {
             deckLock.readLock().lock();
 
-            if (!deck.isEmpty())
-                shouldFinish = env.util.findSets(deck, 1).size() == 0;
-            else
-                shouldFinish = env.util.findSets(cardsOnTable, 1).size() == 0;
+            List<Integer> cardsInGame = Arrays.stream(table.slotToCard).filter(Objects::nonNull).collect(Collectors.toList());
+            cardsInGame.addAll(deck);
+
+            ans = env.util.findSets(cardsInGame, 1).size() == 0;
 
         } finally {
             deckLock.readLock().unlock();
         }
 
-        return shouldFinish;
+        return ans;
     }
 
     /**
@@ -268,8 +268,11 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         table.tableReady = false;
 
+        // Check if any cards should be dealt to the table.
+        if (shouldFinish()) return;
+
         // Check if any cards were placed on the table.
-        boolean tableChanged = shuffleAndDeal();
+        shuffleAndDeal();
 
         if (gameMode != Mode.Timer) {
 
@@ -280,11 +283,10 @@ public class Dealer implements Runnable {
 
         }
 
-        // Reset timer in case table changed.
-        if (tableChanged && !shouldFinish()) {
-            if (env.config.hints) table.hints();
-            updateTimerDisplay(true);
-        }
+        if (env.config.hints) table.hints();
+
+        // Reset timer
+        updateTimerDisplay(true);
 
         table.tableReady = true;
     }
@@ -294,7 +296,7 @@ public class Dealer implements Runnable {
      *
      * @return - true iff any cards were placed on the table.
      */
-    private boolean shuffleAndDeal() {
+    private void shuffleAndDeal() {
 
         Integer[] availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).toArray(Integer[]::new);
 
@@ -313,8 +315,6 @@ public class Dealer implements Runnable {
             deckLock.writeLock().unlock();
             table.unlockSlots(availableSlots, true);
         }
-
-        return availableSlots.length > 0;
     }
 
     /**
