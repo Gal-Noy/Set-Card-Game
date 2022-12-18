@@ -11,8 +11,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class TableTest {
 
@@ -56,7 +55,7 @@ class TableTest {
         }
     }
 
-    private void placeSomeCardsAndAssert() {
+    private void placeSomeCardsAndAssert() throws InterruptedException {
         table.placeCard(8, 2);
 
         assertEquals(8, (int) slotToCard[2]);
@@ -84,14 +83,14 @@ class TableTest {
     }
 
     @Test
-    void placeCard_SomeSlotsAreFilled() {
+    void placeCard_SomeSlotsAreFilled() throws InterruptedException {
 
         fillSomeSlots();
         placeSomeCardsAndAssert();
     }
 
     @Test
-    void placeCard_AllSlotsAreFilled() {
+    void placeCard_AllSlotsAreFilled() throws InterruptedException {
         fillAllSlots();
         placeSomeCardsAndAssert();
     }
@@ -103,53 +102,38 @@ class TableTest {
         assertNull(slotToCard[0]);
     }
 
-    static class MockUserInterface implements UserInterface {
-        @Override
-        public void placeCard(int card, int slot) {
-        }
-
-        @Override
-        public void removeCard(int slot) {
-        }
-
-        @Override
-        public void setCountdown(long millies, boolean warn) {
-        }
-
-        @Override
-        public void setElapsed(long millies) {
-        }
-
-        @Override
-        public void setScore(int player, int score) {
-        }
-
-        @Override
-        public void setFreeze(int player, long millies) {
-        }
-
-        @Override
-        public void placeToken(int player, int slot) {
-        }
-
-        @Override
-        public void removeTokens() {
-        }
-
-        @Override
-        public void removeTokens(int slot) {
-        }
-
-        @Override
-        public void removeToken(int player, int slot) {
-        }
-
-        @Override
-        public void announceWinner(int[] players) {
-        }
+    @Test
+    void lockSlot(){
+        table.lockSlot(0, false);
+        assertFalse(table.slotLocks[0].writeLock().tryLock());
     }
 
-    ;
+    static class MockUserInterface implements UserInterface {
+        @Override
+        public void dispose() {}
+        @Override
+        public void placeCard(int card, int slot) {}
+        @Override
+        public void removeCard(int slot) {}
+        @Override
+        public void setCountdown(long millies, boolean warn) {}
+        @Override
+        public void setElapsed(long millies) {}
+        @Override
+        public void setScore(int player, int score) {}
+        @Override
+        public void setFreeze(int player, long millies) {}
+        @Override
+        public void placeToken(int player, int slot) {}
+        @Override
+        public void removeTokens() {}
+        @Override
+        public void removeTokens(int slot) {}
+        @Override
+        public void removeToken(int player, int slot) {}
+        @Override
+        public void announceWinner(int[] players) {}
+    };
 
     static class MockUtil implements Util {
         @Override
@@ -171,6 +155,9 @@ class TableTest {
         public List<int[]> findSets(List<Integer> deck, int count) {
             return null;
         }
+
+        @Override
+        public void spin() {}
     }
 
     static class MockLogger extends Logger {

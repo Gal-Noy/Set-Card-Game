@@ -273,7 +273,7 @@ public class Player implements Runnable {
     /**
      * @return - the player's score.
      */
-    public int getScore() {
+    public int score() {
         return score;
     }
 

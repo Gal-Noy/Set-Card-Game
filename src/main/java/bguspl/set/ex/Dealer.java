@@ -358,9 +358,9 @@ public class Dealer implements Runnable {
      */
     private void updateTimer(boolean reset, long currentMillis) {
         if (reset) {
-            reshuffleTime = currentMillis + env.config.turnTimeoutMillis;
             for (Player player : players)
                 player.setFreezeTime(-1);
+            reshuffleTime = currentMillis + env.config.turnTimeoutMillis;
         }
         long delta = reshuffleTime - currentMillis;
         boolean warn = delta <= env.config.turnTimeoutWarningMillis;
@@ -453,14 +453,14 @@ public class Dealer implements Runnable {
         int maxScore = 0;
         int score = 0;
         for (Player player : players) {
-            maxScore = Math.max(maxScore, player.getScore());
-            score += player.getScore();
+            maxScore = Math.max(maxScore, player.score());
+            score += player.score();
         }
         System.out.println(score);
         int finalMaxScore = maxScore;
 
         // Get winners and display them.
-        List<Integer> winnersIds = Arrays.stream(players).filter(player -> player.getScore() == finalMaxScore).map(Player::getId).collect(Collectors.toList());
+        List<Integer> winnersIds = Arrays.stream(players).filter(player -> player.score() == finalMaxScore).map(Player::getId).collect(Collectors.toList());
         env.ui.announceWinner(winnersIds.stream().mapToInt(i -> i).toArray());
     }
 
@@ -499,9 +499,9 @@ public class Dealer implements Runnable {
 
                     // If legal, remove tokens from relevant sets and add them to setsToRemove.
                     if (isLegalSet) {
+                        player.point();
                         setsToRemove.add(Arrays.stream(slotsToExamine).boxed().toArray(Integer[]::new));
                         removeWinningTokens(slotsToExamine);
-                        player.point();
                     } else // If not legal, penalize player.
                         player.penalty();
 

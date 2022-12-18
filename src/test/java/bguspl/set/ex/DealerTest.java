@@ -61,7 +61,7 @@ class DealerTest {
         properties.put("PenaltyFreezeSeconds", "3");
         TableTest.MockLogger logger = new TableTest.MockLogger();
         config = new Config(logger, properties);
-        ui = new DealerTest.MockUserInterface();
+        ui = new TableTest.MockUserInterface();
         Env env = new Env(logger, config, ui, util);
         players = new Player[4];
         for (int i = 0; i < players.length; i++)
@@ -79,8 +79,9 @@ class DealerTest {
 
     void putSomeCards(){
         for (int i = 0; i < 3; i++){
-            table.slotToCard[i] = i;
-            table.cardToSlot[i] = i;
+            int card = dealer.deck.remove(0);
+            table.slotToCard[i] = card;
+            table.cardToSlot[card] = i;
         }
     }
 
@@ -127,53 +128,6 @@ class DealerTest {
         assertTrue(dealer.getPlayersTokens().get(0).contains(0));
         dealer.removeToken(0, 0);
         assertFalse(dealer.getPlayersTokens().get(0).contains(0));
-
-    }
-
-    static class MockUserInterface implements UserInterface {
-        @Override
-        public void placeCard(int card, int slot) {
-        }
-
-        @Override
-        public void removeCard(int slot) {
-        }
-
-        @Override
-        public void setCountdown(long millies, boolean warn) {
-        }
-
-        @Override
-        public void setElapsed(long millies) {
-        }
-
-        @Override
-        public void setScore(int player, int score) {
-        }
-
-        @Override
-        public void setFreeze(int player, long millies) {
-        }
-
-        @Override
-        public void placeToken(int player, int slot) {
-        }
-
-        @Override
-        public void removeTokens() {
-        }
-
-        @Override
-        public void removeTokens(int slot) {
-        }
-
-        @Override
-        public void removeToken(int player, int slot) {
-        }
-
-        @Override
-        public void announceWinner(int[] players) {
-        }
     }
 
 
