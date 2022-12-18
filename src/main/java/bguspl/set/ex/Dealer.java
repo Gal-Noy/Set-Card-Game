@@ -276,10 +276,8 @@ public class Dealer implements Runnable {
         }
 
         // Reset timer in case table changed.
-        if (tableChanged && !shouldFinish()) {
+        if (tableChanged && !shouldFinish())
             updateTimerDisplay(true);
-            table.hints();
-        }
 
         table.tableReady = true;
     }
@@ -298,6 +296,7 @@ public class Dealer implements Runnable {
             table.lockSlots(availableSlots, true);
             deckLock.writeLock().lock();
 
+            Collections.shuffle(Arrays.asList(availableSlots));
             Collections.shuffle(deck);
             for (int i = 0; i < Math.min(deck.size(), availableSlots.length); i++)
                 table.placeCard(deck.remove(0), availableSlots[i]);
@@ -402,6 +401,7 @@ public class Dealer implements Runnable {
             clearAllPlayersQueues();
 
             List<Integer> filledSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] != null).collect(Collectors.toList());
+            Collections.shuffle(filledSlots);
 
             for (int slot : filledSlots) {
                 // Return card to deck

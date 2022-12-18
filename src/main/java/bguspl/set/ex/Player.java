@@ -125,17 +125,17 @@ public class Player implements Runnable {
                     }
             }
 
-            int clickedSlot = -1;
+            Integer clickedSlot;
 
             try{
                 chosenSlotsLock.writeLock().lock();
-                if (!chosenSlots.isEmpty()) clickedSlot = chosenSlots.remove();
+                clickedSlot = !chosenSlots.isEmpty() ? chosenSlots.remove() : null;
             } finally {
                 chosenSlotsLock.writeLock().unlock();
             }
 
             // Allow actions iff game is running and table is available.
-            if (clickedSlot != -1 && table.tableReady && !terminate) {
+            if (clickedSlot != null && table.tableReady && !terminate) {
                 try {
                     table.lockSlot(clickedSlot, false);
 
