@@ -272,7 +272,7 @@ public class Dealer implements Runnable {
         if (shouldFinish()) return;
 
         // Check if any cards were placed on the table.
-        shuffleAndDeal();
+        boolean tableChanged = shuffleAndDeal();
 
         if (gameMode != Mode.Timer) {
 
@@ -283,10 +283,10 @@ public class Dealer implements Runnable {
 
         }
 
-        if (env.config.hints) table.hints();
-
-        // Reset timer
-        updateTimerDisplay(true);
+        if (tableChanged) {
+            if (env.config.hints) table.hints();
+            updateTimerDisplay(true);
+        }
 
         table.tableReady = true;
     }
@@ -296,7 +296,7 @@ public class Dealer implements Runnable {
      *
      * @return - true iff any cards were placed on the table.
      */
-    private void shuffleAndDeal() {
+    private boolean shuffleAndDeal() {
 
         Integer[] availableSlots = IntStream.rangeClosed(0, env.config.tableSize - 1).boxed().filter(slot -> table.slotToCard[slot] == null).toArray(Integer[]::new);
 
@@ -315,6 +315,8 @@ public class Dealer implements Runnable {
             deckLock.writeLock().unlock();
             table.unlockSlots(availableSlots, true);
         }
+
+        return availableSlots.length > 0;
     }
 
     /**
