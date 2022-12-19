@@ -451,12 +451,9 @@ public class Dealer implements Runnable {
     private void announceWinners() {
         // Get max score.
         int maxScore = 0;
-        int score = 0;
-        for (Player player : players) {
+        for (Player player : players)
             maxScore = Math.max(maxScore, player.score());
-            score += player.score();
-        }
-        System.out.println(score);
+
         int finalMaxScore = maxScore;
 
         // Get winners and display them.

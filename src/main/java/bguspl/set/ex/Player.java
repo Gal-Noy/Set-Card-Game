@@ -182,8 +182,7 @@ public class Player implements Runnable {
             while (!terminate) {
 
                 // Pick random slot from the table.
-                if (queueSize() < env.config.featureSize)
-                    keyPressed((int) (Math.random() * env.config.tableSize));
+                keyPressed((int) (Math.random() * env.config.tableSize));
 
             }
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " terminated.");
@@ -198,8 +197,8 @@ public class Player implements Runnable {
      * @post - terminate == true
      */
     public synchronized void terminate() {
-        notifyAll();
         terminate = true;
+        notifyAll();
     }
 
     /**

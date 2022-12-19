@@ -162,14 +162,14 @@ public class Table {
     }
 
     public void lockSlot(int slot, boolean write){
-        if(write)
+        if (write)
             slotLocks[slot].writeLock().lock();
         else
             slotLocks[slot].readLock().lock();
     }
 
     public void unlockSlot(int slot, boolean write){
-        if(write)
+        if (write)
             slotLocks[slot].writeLock().unlock();
         else
             slotLocks[slot].readLock().unlock();
