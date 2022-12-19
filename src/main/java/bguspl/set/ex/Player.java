@@ -182,7 +182,8 @@ public class Player implements Runnable {
             while (!terminate) {
 
                 // Pick random slot from the table.
-                keyPressed((int) (Math.random() * env.config.tableSize));
+                if (queueSize() < env.config.featureSize)
+                    keyPressed((int) (Math.random() * env.config.tableSize));
 
             }
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " terminated.");
