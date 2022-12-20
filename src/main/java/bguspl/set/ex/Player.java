@@ -3,10 +3,8 @@ package bguspl.set.ex;
 import bguspl.set.Env;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 
@@ -76,6 +74,12 @@ public class Player implements Runnable {
     private final ReadWriteLock chosenSlotsLock;
 
     /**
+     * boolean flags to indicate chosenSlots queue states.
+     */
+    private boolean chosenSlotsEmpty = true;
+    private boolean chosenSlotsFull = false;
+
+    /**
      * The time when the player freeze will time out.
      */
     private volatile long freezeTime = -1;
@@ -84,6 +88,11 @@ public class Player implements Runnable {
      * signifier if the player's set is being examined by the dealer.
      */
     protected volatile boolean examined = false;
+
+    /**
+     * lock for the AI thread.
+     */
+    private final Object aiLock = new Object();
 
     /**
      * The class constructor.
@@ -100,7 +109,7 @@ public class Player implements Runnable {
         this.id = id;
         this.human = human;
         this.dealer = dealer;
-        this.chosenSlots = new ConcurrentLinkedQueue<>();
+        this.chosenSlots = new ArrayBlockingQueue<>(env.config.featureSize);
         this.chosenSlotsLock = new ReentrantReadWriteLock();
     }
 
@@ -115,24 +124,13 @@ public class Player implements Runnable {
 
         while (!terminate) {
 
-
             // Sleep until woken by input manager thread or game termination.
             synchronized (this) {
-                while (chosenSlots.isEmpty() && !terminate)
-                    try {
-                        wait();
-                    } catch (InterruptedException ignored) {
-                    }
+                while (chosenSlotsEmpty && !terminate)
+                    try {wait();} catch (InterruptedException ignored) {}
             }
 
-            Integer clickedSlot;
-
-            try{
-                chosenSlotsLock.writeLock().lock();
-                clickedSlot = !chosenSlots.isEmpty() ? chosenSlots.remove() : null;
-            } finally {
-                chosenSlotsLock.writeLock().unlock();
-            }
+            Integer clickedSlot = nextSlot();
 
             // Allow actions iff game is running and table is available.
             if (clickedSlot != null && table.tableReady && !terminate) {
@@ -157,18 +155,24 @@ public class Player implements Runnable {
     }
 
     /**
-     * check if the chosenSlots queue is empty.
-     * @return - true iff the chosenSlots queue is empty.
+     * Handles the player's chosen slots queue.
+     * @return - the next chosen slot.
      */
-    private int queueSize() {
-        int output;
-        try {
-            chosenSlotsLock.readLock().lock();
-            output = chosenSlots.size();
+    private Integer nextSlot(){
+        Integer clickedSlot = null;
+        try{
+            chosenSlotsLock.writeLock().lock();
+
+            if (!chosenSlots.isEmpty()) {
+                clickedSlot = chosenSlots.poll();
+                chosenSlotsEmpty = chosenSlots.isEmpty();
+                chosenSlotsFull = false;
+                synchronized (aiLock){aiLock.notifyAll();}
+            }
         } finally {
-            chosenSlotsLock.readLock().unlock();
+            chosenSlotsLock.writeLock().unlock();
         }
-        return output;
+        return clickedSlot;
     }
 
     /**
@@ -181,9 +185,12 @@ public class Player implements Runnable {
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
 
+                synchronized (aiLock){
+                    while (chosenSlotsFull)
+                        try {aiLock.wait();} catch (InterruptedException ignored) {}
+                }
                 // Pick random slot from the table.
-                if (queueSize() < env.config.featureSize)
-                    keyPressed((int) (Math.random() * env.config.tableSize));
+                keyPressed((int) (Math.random() * env.config.tableSize));
 
             }
             env.logger.log(Level.INFO, "Thread " + Thread.currentThread().getName() + " terminated.");
@@ -214,8 +221,13 @@ public class Player implements Runnable {
             chosenSlotsLock.writeLock().lock();
 
             // Allow key presses iff all conditions are met.
-            if (!examined && table.tableReady && freezeTime < System.currentTimeMillis() && chosenSlots.size() < env.config.featureSize) {
-                chosenSlots.add(slot);
+            if (!examined && table.tableReady && freezeTime < System.currentTimeMillis()) {
+                chosenSlots.offer(slot);
+
+                chosenSlotsEmpty = false;
+                chosenSlotsFull = chosenSlots.size() == env.config.featureSize;
+                System.out.println(chosenSlots.size());
+
                 notifyAll();
             }
         } finally {
@@ -265,6 +277,10 @@ public class Player implements Runnable {
         try {
             chosenSlotsLock.writeLock().lock();
             chosenSlots.clear();
+
+            chosenSlotsEmpty = true;
+            chosenSlotsFull = false;
+            synchronized (aiLock){aiLock.notifyAll();}
         } finally {
             chosenSlotsLock.writeLock().unlock();
         }
