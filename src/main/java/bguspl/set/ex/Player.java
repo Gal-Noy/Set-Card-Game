@@ -118,7 +118,7 @@ public class Player implements Runnable {
 
             // Sleep until woken by input manager thread or game termination.
             synchronized (this) {
-                while (queueSize() == 0 && !terminate)
+                while (chosenSlots.isEmpty() && !terminate)
                     try {
                         wait();
                     } catch (InterruptedException ignored) {
