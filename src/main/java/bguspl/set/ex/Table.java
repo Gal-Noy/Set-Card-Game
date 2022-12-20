@@ -161,6 +161,9 @@ public class Table {
         env.ui.removeTokens();
     }
 
+    /**
+     * Functions for locking/unlocking slots.
+     */
     public void lockSlot(int slot, boolean write){
         if (write)
             slotLocks[slot].writeLock().lock();

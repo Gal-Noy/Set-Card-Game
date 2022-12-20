@@ -74,9 +74,8 @@ public class Player implements Runnable {
     private final ReadWriteLock chosenSlotsLock;
 
     /**
-     * boolean flags to indicate chosenSlots queue states.
+     * boolean flag to indicate that chosenSlots queue full.
      */
-    private boolean chosenSlotsEmpty = true;
     private boolean chosenSlotsFull = false;
 
     /**
@@ -126,7 +125,7 @@ public class Player implements Runnable {
 
             // Sleep until woken by input manager thread or game termination.
             synchronized (this) {
-                while (chosenSlotsEmpty && !terminate)
+                while (chosenSlots.isEmpty() && !terminate)
                     try {wait();} catch (InterruptedException ignored) {}
             }
 
@@ -165,7 +164,6 @@ public class Player implements Runnable {
 
             if (!chosenSlots.isEmpty()) {
                 clickedSlot = chosenSlots.poll();
-                chosenSlotsEmpty = chosenSlots.isEmpty();
                 chosenSlotsFull = false;
                 synchronized (aiLock){aiLock.notifyAll();}
             }
@@ -224,9 +222,8 @@ public class Player implements Runnable {
             if (!examined && table.tableReady && freezeTime < System.currentTimeMillis()) {
                 chosenSlots.offer(slot);
 
-                chosenSlotsEmpty = false;
                 chosenSlotsFull = chosenSlots.size() == env.config.featureSize;
-                System.out.println(chosenSlots.size());
+                if (chosenSlots.size() > env.config.featureSize) System.out.println(chosenSlots.size());
 
                 notifyAll();
             }
@@ -278,7 +275,6 @@ public class Player implements Runnable {
             chosenSlotsLock.writeLock().lock();
             chosenSlots.clear();
 
-            chosenSlotsEmpty = true;
             chosenSlotsFull = false;
             synchronized (aiLock){aiLock.notifyAll();}
         } finally {
