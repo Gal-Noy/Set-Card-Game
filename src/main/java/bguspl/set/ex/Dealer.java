@@ -188,8 +188,8 @@ public class Dealer implements Runnable {
         while (!shouldFinish() && System.currentTimeMillis() < reshuffleTime) {
             sleepUntilWokenOrTimeout();
             examineSets();
-            updateTimerDisplay(false);
             removeCardsFromTable();
+            updateTimerDisplay(false);
             placeCardsOnTable();
         }
     }
@@ -268,9 +268,6 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         table.tableReady = false;
 
-        // Check if any cards should be dealt to the table.
-        if (shouldFinish()) return;
-
         // Check if any cards were placed on the table.
         boolean tableChanged = shuffleAndDeal();
 
@@ -281,9 +278,9 @@ public class Dealer implements Runnable {
             reshuffleTime = !setsAvailable ? System.currentTimeMillis() : Long.MAX_VALUE;
         }
 
-        if (tableChanged) {
-            if (env.config.hints) table.hints();
+        if (tableChanged && !shouldFinish()) {
             updateTimerDisplay(true);
+            if (env.config.hints) table.hints();
         }
 
         table.tableReady = true;
@@ -346,7 +343,6 @@ public class Dealer implements Runnable {
             updateTimer(reset, currentMillis);
         else if (gameMode == Mode.Elapsed)
             updateElapsed(reset, currentMillis);
-
     }
 
     /**
