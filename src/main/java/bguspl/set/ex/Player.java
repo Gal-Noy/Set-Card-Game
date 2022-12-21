@@ -223,7 +223,6 @@ public class Player implements Runnable {
                 chosenSlots.offer(slot);
 
                 chosenSlotsFull = chosenSlots.size() == env.config.featureSize;
-                if (chosenSlots.size() > env.config.featureSize) System.out.println(chosenSlots.size());
 
                 notifyAll();
             }
