@@ -162,7 +162,7 @@ public class Dealer implements Runnable {
 
         // Main game loop
         while (!shouldFinish()) {
-            placeCardsOnTable();
+            placeCardsOnTable(true);
             timerLoop();
             removeAllCardsFromTable();
         }
@@ -189,8 +189,8 @@ public class Dealer implements Runnable {
             sleepUntilWokenOrTimeout();
             examineSets();
             removeCardsFromTable();
-            updateTimerDisplay(false);
-            placeCardsOnTable();
+            updateTimerDisplay(false, false);
+            placeCardsOnTable(false);
         }
     }
 
@@ -259,13 +259,15 @@ public class Dealer implements Runnable {
                 // Unlock locks.
                 table.unlockSlots(setToRemove, true);
             }
+
+            updateTimerDisplay(true, false);
         }
     }
 
     /**
      * Check if any cards can be removed from the deck and placed on the table.
      */
-    private void placeCardsOnTable() {
+    private void placeCardsOnTable(boolean newRound) {
         table.tableReady = false;
 
         // Check if any cards were placed on the table.
@@ -279,7 +281,7 @@ public class Dealer implements Runnable {
         }
 
         if (tableChanged && !shouldFinish()) {
-            updateTimerDisplay(true);
+            updateTimerDisplay(true, newRound);
             if (env.config.hints) table.hints();
         }
 
@@ -328,22 +330,25 @@ public class Dealer implements Runnable {
      * Reset and/or update the timer and the timer display.
      *
      * @param reset - true iff the timer should be reset.
+     * @param resetPlayers
      */
-    private void updateTimerDisplay(boolean reset) {
+    private void updateTimerDisplay(boolean reset, boolean resetPlayers) {
         table.tableReady = false;
 
         long currentMillis = System.currentTimeMillis();
-
+        
+        // Update countdown display according to game mode and reset if needed.
+        if (gameMode == Mode.Timer)
+        updateTimer(reset, resetPlayers, currentMillis);
+        else if (gameMode == Mode.Elapsed)
+        updateElapsed(reset, currentMillis);
+        
         // Update players freeze timers if needed.
         for (Player player : players)
             env.ui.setFreeze(player.getId(), formatTime(player.getFreezeTime() - currentMillis, false));
 
-        // Update countdown display according to game mode and reset if needed.
-        if (gameMode == Mode.Timer)
-            updateTimer(reset, currentMillis);
-        else if (gameMode == Mode.Elapsed)
-            updateElapsed(reset, currentMillis);
-    }
+
+    }    
 
     /**
      * Reset and/or update the countdown and the countdown display in Timer mode.
@@ -352,11 +357,12 @@ public class Dealer implements Runnable {
      * @param currentMillis - the current time in milliseconds.
      * @post - the countdown display is updated.
      */
-    private void updateTimer(boolean reset, long currentMillis) {
+    private void updateTimer(boolean reset, boolean resetPlayers, long currentMillis) {
         if (reset) {
-            for (Player player : players)
-                player.setFreezeTime(-1);
             reshuffleTime = currentMillis + env.config.turnTimeoutMillis;
+            if (resetPlayers)
+                for (Player player : players)
+                    player.setFreezeTime(-1);
         }
         long delta = reshuffleTime - currentMillis;
         boolean warn = delta <= env.config.turnTimeoutWarningMillis;
