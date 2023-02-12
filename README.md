@@ -6,7 +6,7 @@ A digital version of the classic Set card game, where players race to find as ma
 
 - Make sure Java is installed (1.8 or later).
 - Clone or download the repository to your local machine.
-- Edit the configuration file as you wish - you should edit the numbers of human/computer players, set their names and most important, the duration of each round:
+- Edit the configuration file as you wish - you should edit the numbers of human/computer players, set their names, toggle hints on/off and most important, set duration of each round:
   - by setting TurnTimeoutSeconds > 0 (60 by default), the game will start in regular countdown timer mode.
   - by setting TurnTimeoutSeconds = 0, the game will start in a "Free play" mode, withot timer.
   - by setting TurnTimeoutSeconds < 0, the game will start in "Elapsed" mode, where the timer resets after a legal set is collected.
