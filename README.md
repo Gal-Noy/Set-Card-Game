@@ -1,6 +1,6 @@
 # Set Card Game
 
-- A digital version of the classic Set card game, where players race to find as many sets as possible before the deck runs out.
+A digital version of the classic Set card game, where players race to find as many sets as possible before the deck runs out.
 
 ## Getting Started
 
@@ -10,7 +10,9 @@
   - by setting TurnTimeoutSeconds > 0 (60 by default), the game will start in regular countdown timer mode.
   - by setting TurnTimeoutSeconds = 0, the game will start in a "Free play" mode, withot timer.
   - by setting TurnTimeoutSeconds < 0, the game will start in "Elapsed" mode, where the timer resets after a legal set is collected.
-- Run the "Main" file.
+ ### Commands
+- To compile: mvn clean compile test
+- To run: java -cp target/classes bguspl.set.Main
 
 ## Keyboard & Interface
 ![image](https://user-images.githubusercontent.com/109943831/218310054-1a63cc6f-a86d-478e-be11-0a45419e7c8c.png)
